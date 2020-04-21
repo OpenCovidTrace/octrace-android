@@ -1,7 +1,21 @@
 <resources>
     <string name="app_name">OCTrace</string>
 
+    <!-- MainActivity -->
     <string name="title_newsroom">Newsroom</string>
     <string name="title_map">Map</string>
     <string name="title_my_status">My status</string>
+    <string name="location_disabled">Location is disabled :(</string>
+
+    <!-- OnboardingActivity -->
+    <string name="onboarding_welcome_title">Welcome!</string>
+    <string name="onboarding_welcome_text">Covid Control is here to help you and your community to keep safe and take the appropriate measures in case necessary.\nWe are in this together, and each one of us plays an important role.</string>
+    <string name="onboarding_welcome_button">Get started!</string>
+    <string name="onboarding_location_title">Location Data</string>
+    <string name="onboarding_location_text">All location tracking data is securely stored and does not leave your phone unless you get sick and want to notify your contacts, in either an anonymous or a transparent way.</string>
+    <string name="onboarding_location_button">Enable location</string>
+
+    <!-- TrackingService -->
+    <string name="background_channel_name">Background mode</string>
+    <string name="tracking_active">Tracking is active</string>
 </resources>
