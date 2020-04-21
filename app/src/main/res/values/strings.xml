@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">OCTrace</string>
+
+    <string name="title_newsroom">Newsroom</string>
+    <string name="title_map">Map</string>
+    <string name="title_my_status">My status</string>
+</resources>

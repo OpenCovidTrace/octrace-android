@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_map">
+
+    <fragment
+        android:id="@+id/navigation_news"
+        android:name="org.opencovidtrace.octrace.ui.news.NewsFragment"
+        android:label="@string/title_newsroom"
+        tools:layout="@layout/fragment_map" />
+
+    <fragment
+        android:id="@+id/navigation_map"
+        android:name="org.opencovidtrace.octrace.ui.map.MapFragment"
+        android:label="@string/title_map"
+        tools:layout="@layout/fragment_news" />
+
+    <fragment
+        android:id="@+id/navigation_status"
+        android:name="org.opencovidtrace.octrace.ui.status.StatusFragment"
+        android:label="@string/title_my_status"
+        tools:layout="@layout/fragment_status" />
+</navigation>
