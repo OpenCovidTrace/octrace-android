@@ -28,21 +28,23 @@ class TrackingService : Service() {
         val TRACKING_LOCATION_REQUEST_BUILDER: LocationSettingsRequest.Builder =
             LocationSettingsRequest.Builder().addLocationRequest(TRACKING_LOCATION_REQUEST)
 
-        const val TAG = "LOCATION"
+        const val TAG = "TRACKING"
 
         init {
-            TRACKING_LOCATION_REQUEST.maxWaitTime = 15000
-            TRACKING_LOCATION_REQUEST.interval = 12000
-            TRACKING_LOCATION_REQUEST.fastestInterval = 9000
+            TRACKING_LOCATION_REQUEST.maxWaitTime = 5000
+            TRACKING_LOCATION_REQUEST.interval = 3000
+            TRACKING_LOCATION_REQUEST.fastestInterval = 1000
             TRACKING_LOCATION_REQUEST.priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
         }
     }
 
-    private val visibilityLocationCallback: LocationCallback = object : LocationCallback() {
+    private val trackingLocationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             val location = locationResult.lastLocation
-            LocationUpdateManager.updateLocation(location)
-            sendTrackingLocation(location)
+            if (location != null) {
+                LocationUpdateManager.updateLocation(location)
+                sendTrackingLocation(location)
+            }
         }
     }
 
@@ -54,17 +56,11 @@ class TrackingService : Service() {
             LocationAccessManager.addConsumer(
                 this,
                 TRACKING_LOCATION_REQUEST,
-                visibilityLocationCallback
+                trackingLocationCallback
             )
 
-            // It's a feature to send location ASAP on eye tap
-            LocationUpdateManager.registerCallback { location: Location ->
-                sendTrackingLocation(
-                    location
-                )
-            }
             foreground = true
-            Log.i(TAG, "Visibility requested")
+            Log.i(TAG, "Tracking enabled")
         } else {
             Log.i(TAG, "Failed to request tracking location updates")
         }
@@ -95,6 +91,7 @@ class TrackingService : Service() {
             // or other notification behaviors after this
             notificationManager.createNotificationChannel(channel)
         }
+
         val openMainIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -119,12 +116,12 @@ class TrackingService : Service() {
 
     override fun onDestroy() {
         Log.i(TAG, "onDestroy")
-        stopVisibilityUpdates()
+        stopTrackingUpdates()
         super.onDestroy()
     }
 
-    private fun stopVisibilityUpdates() {
-        LocationAccessManager.removeConsumer(visibilityLocationCallback)
+    private fun stopTrackingUpdates() {
+        LocationAccessManager.removeConsumer(trackingLocationCallback)
     }
 
     override fun onBind(intent: Intent?): IBinder? {

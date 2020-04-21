@@ -39,7 +39,9 @@ object LocationAccessManager {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(ctx)
 
         fusedLocationClient!!.lastLocation.addOnSuccessListener { location ->
-            LocationUpdateManager.updateLocation(location)
+            if (location != null) {
+                LocationUpdateManager.updateLocation(location)
+            }
         }
     }
 

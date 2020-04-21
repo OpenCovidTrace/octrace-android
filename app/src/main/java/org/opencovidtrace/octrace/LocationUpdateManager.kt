@@ -11,17 +11,15 @@ object LocationUpdateManager {
     /**
      * To be used only on UI thread
      */
-    fun updateLocation(location: Location?) {
-        if (location != null) {
-            lastLocation = location
-            lastLocationUpdate = System.currentTimeMillis()
+    fun updateLocation(location: Location) {
+        lastLocation = location
+        lastLocationUpdate = System.currentTimeMillis()
 
-            for (callback in callbacks) {
-                callback(location)
-            }
-
-            callbacks.clear()
+        for (callback in callbacks) {
+            callback(location)
         }
+
+        callbacks.clear()
     }
 
     /**
