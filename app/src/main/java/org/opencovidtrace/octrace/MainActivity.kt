@@ -79,7 +79,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(permission.ACCESS_FINE_LOCATION),
+                arrayOf(permission.ACCESS_FINE_LOCATION, permission.ACCESS_BACKGROUND_LOCATION),
                 REQUEST_LOCATION
             )
         }
