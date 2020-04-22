@@ -1,6 +1,18 @@
 <resources>
     <string name="app_name">OCTrace</string>
 
+    <!--Errors-->
+    <string name="bluetooth_turn_off">Bluetooth is powered off</string>
+    <string name="bluetooth_turn_off_description">To start turn on bluetooth in settings</string>
+    <string name="bluetooth_do_not_support">Your smartphone does not support Bluetooth</string>
+    <string name="bluetooth_do_not_support_description">Therefore, we will not be able to connect the device</string>
+    <string name="gps_on_reason">For Bluetooth proper work, the location service must be turned on in your phone settings.</string>
+    <!--Other-->
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="enable">Enable</string>
+    <string name="done">Done</string>
+    <string name="settings">Settings</string>
     <!-- MainActivity -->
     <string name="title_newsroom">Newsroom</string>
     <string name="title_map">Map</string>
