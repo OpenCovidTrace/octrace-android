@@ -12,7 +12,6 @@ import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.IBinder
-import android.provider.Settings
 import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
 import androidx.appcompat.app.AlertDialog
@@ -28,7 +27,6 @@ import org.opencovidtrace.octrace.OnboardingActivity.Extra.STAGE_EXTRA
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.data.Enums.*
 import org.opencovidtrace.octrace.di.BluetoothManagerProvider
-import org.opencovidtrace.octrace.ext.access.isNotGranted
 import org.opencovidtrace.octrace.ext.access.withPermissions
 import org.opencovidtrace.octrace.service.BleUpdatesService
 import org.opencovidtrace.octrace.storage.KeyManager
@@ -40,8 +38,7 @@ class MainActivity : AppCompatActivity() {
         const val REQUEST_NONE = 0
         const val REQUEST_LOCATION = 1
         const val REQUEST_CHECK_TRACKING_SETTINGS = 2
-
-        private const val RC_ENABLE_BLUETOOTH = 8387
+        private const val REQUEST_BLUETOOTH = 3
     }
 
     private var bleUpdatesService: BleUpdatesService? = null
@@ -133,7 +130,7 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode== Activity.RESULT_OK){
-            if (requestCode==RC_ENABLE_BLUETOOTH)
+            if (requestCode==REQUEST_BLUETOOTH)
                 startBleService()
         }
     }
@@ -239,7 +236,7 @@ class MainActivity : AppCompatActivity() {
             setCancelable(false)
             setPositiveButton(R.string.enable) { _, _ ->
                 val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                startActivityForResult(enableBtIntent, RC_ENABLE_BLUETOOTH)
+                startActivityForResult(enableBtIntent, REQUEST_BLUETOOTH)
             }
             show()
         }
