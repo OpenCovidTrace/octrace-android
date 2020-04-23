@@ -1,4 +1,4 @@
-package org.opencovidtrace.octrace
+package org.opencovidtrace.octrace.location
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -40,7 +40,9 @@ object LocationAccessManager {
 
         fusedLocationClient!!.lastLocation.addOnSuccessListener { location ->
             if (location != null) {
-                LocationUpdateManager.updateLocation(location)
+                LocationUpdateManager.updateLocation(
+                    location
+                )
             }
         }
     }

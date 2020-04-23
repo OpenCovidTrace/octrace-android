@@ -1,4 +1,4 @@
-package org.opencovidtrace.octrace
+package org.opencovidtrace.octrace.utils
 
 import java.security.SecureRandom
 

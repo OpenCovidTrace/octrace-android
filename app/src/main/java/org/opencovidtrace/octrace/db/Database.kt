@@ -14,4 +14,3 @@ abstract class Database : RoomDatabase() {
     abstract fun appDao(): OctraceDao
 
 }
-

@@ -12,7 +12,7 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import org.opencovidtrace.octrace.LocationUpdateManager
+import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.R
 
 class MapFragment : Fragment(), OnMapReadyCallback {

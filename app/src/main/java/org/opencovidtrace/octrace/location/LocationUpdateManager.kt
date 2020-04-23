@@ -1,4 +1,4 @@
-package org.opencovidtrace.octrace
+package org.opencovidtrace.octrace.location
 
 import android.location.Location
 

@@ -1,4 +1,4 @@
-package org.opencovidtrace.octrace
+package org.opencovidtrace.octrace.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,6 +15,10 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationSettingsRequest
+import org.opencovidtrace.octrace.location.LocationAccessManager
+import org.opencovidtrace.octrace.location.LocationUpdateManager
+import org.opencovidtrace.octrace.MainActivity
+import org.opencovidtrace.octrace.R
 
 class TrackingService : Service() {
 

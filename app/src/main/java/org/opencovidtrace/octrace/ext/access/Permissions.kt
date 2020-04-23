@@ -26,5 +26,3 @@ inline fun Fragment.withPermissions(permissions: Array<String>, requestCode: Int
     if (notGrantedPermissions.isEmpty()) run()
     else requestPermissions(notGrantedPermissions.toTypedArray(), requestCode)
 }
-
-
