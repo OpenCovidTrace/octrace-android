@@ -42,10 +42,6 @@ class MainActivity : AppCompatActivity() {
         const val REQUEST_CHECK_TRACKING_SETTINGS = 2
 
         private const val RC_ENABLE_BLUETOOTH = 8387
-        private const val RC_ENABLE_GPS = 8316
-        private const val RC_LOCATION = 8345
-        private val LOCATION_PERMISSIONS = arrayOf(permission.ACCESS_COARSE_LOCATION)
-
     }
 
     private var bleUpdatesService: BleUpdatesService? = null
@@ -81,10 +77,7 @@ class MainActivity : AppCompatActivity() {
         navView.setupWithNavController(navController)
 
         if (KeyManager.hasKey(this)) {
-            if (bleUpdatesService != null)
-                startBleService()
-            else
-                needStartBleService = true
+
         } else {
             val intent = Intent(this, OnboardingActivity::class.java)
 
@@ -131,20 +124,16 @@ class MainActivity : AppCompatActivity() {
             REQUEST_LOCATION -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     startTrackingService()
+                    startSearchDevices()
                 }
-            }
-            RC_LOCATION -> {
-                val notGrantedPermissions = LOCATION_PERMISSIONS.filter { it.isNotGranted() }
-                if (notGrantedPermissions.isEmpty()) startSearchDevices()
             }
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        println("onActivityResult $requestCode $resultCode ${data.toString()}")
         if (resultCode== Activity.RESULT_OK){
-            if (requestCode==RC_ENABLE_GPS || requestCode==RC_ENABLE_BLUETOOTH)
+            if (requestCode==RC_ENABLE_BLUETOOTH)
                 startBleService()
         }
     }
@@ -152,6 +141,10 @@ class MainActivity : AppCompatActivity() {
     private fun enableTracking() {
         if (LocationAccessManager.authorized(this)) {
             startTrackingService()
+            if (bleUpdatesService != null)
+                startBleService()
+            else
+                needStartBleService = true
         } else {
             ActivityCompat.requestPermissions(
                 this,
@@ -211,7 +204,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSearchDevices() =
-        withPermissions(LOCATION_PERMISSIONS, RC_LOCATION) {
+        withPermissions(arrayOf(permission.ACCESS_COARSE_LOCATION), REQUEST_LOCATION) {
             val locationManager =
                 getSystemService(Context.LOCATION_SERVICE) as? LocationManager
             val gpsEnabled =
@@ -223,8 +216,6 @@ class MainActivity : AppCompatActivity() {
                     DISABLED -> showBluetoothDisabledError()
                     NOT_FOUND -> showBluetoothNotFoundError()
                 }
-            } else {
-                showTurnOnGpsAlert()
             }
         }
 
@@ -264,16 +255,5 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showTurnOnGpsAlert() {
-        AlertDialog.Builder(this).apply {
-            setMessage(R.string.gps_on_reason)
-            setCancelable(false)
-            setPositiveButton(R.string.settings) { _, _ ->
-                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                startActivityForResult(intent, RC_ENABLE_GPS)
-            }
-            show()
-        }
-    }
 
 }

@@ -125,8 +125,6 @@ class BleUpdatesService : Service() {
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         insertLogs("onStartCommand", TAG)
-//        Tells the system to not try to recreate the service after it has been killed.
-//        return START_NOT_STICKY;
         return START_STICKY
     }
 
