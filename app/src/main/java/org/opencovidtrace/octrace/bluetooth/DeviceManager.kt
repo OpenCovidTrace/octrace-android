@@ -15,7 +15,7 @@ class DeviceManager(private val context: Context) {
 
     companion object {
         private val TAG = DeviceManager::class.java.simpleName
-        val SERVICE_UUID: UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
+        val SERVICE_UUID: UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9f")
         val MAIN_CHARACTERISTIC_UUID: UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
     }
 
@@ -142,7 +142,11 @@ class DeviceManager(private val context: Context) {
                     gatt?.discoverServices()
                 }
 
-                override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+                override fun onConnectionStateChange(
+                    gatt: BluetoothGatt,
+                    status: Int,
+                    newState: Int
+                ) {
                     when (newState) {
                         BluetoothProfile.STATE_CONNECTED -> {
                             insertLogs("Device Connected", device.address)
@@ -172,7 +176,6 @@ class DeviceManager(private val context: Context) {
                     var hasServiceAndCharacteristic = false
                     val service = gatt.getService(SERVICE_UUID)
                     if (service != null) {
-                        // change value
                         val characteristic =
                             service.getCharacteristic(MAIN_CHARACTERISTIC_UUID)
                         characteristic?.let {
@@ -181,8 +184,8 @@ class DeviceManager(private val context: Context) {
                         }
 
                     }
-
                     if (!hasServiceAndCharacteristic) {
+                        deviceStatusListener?.onServiceNotFound(device)
                         closeConnection()
                     }
                 }
@@ -219,7 +222,10 @@ class DeviceManager(private val context: Context) {
         device: BluetoothDevice,
         characteristic: BluetoothGattCharacteristic
     ) {
-        insertLogs("Success Characteristic Read ", characteristic.value?.contentToString()?:"is empty")
+        insertLogs(
+            "Success Characteristic Read ",
+            characteristic.value?.contentToString() ?: "is empty"
+        )
         deviceStatusListener?.onDataReceived(device, characteristic.value)
         closeConnection()
     }
@@ -227,6 +233,7 @@ class DeviceManager(private val context: Context) {
 
     interface DeviceStatusListener {
         fun onDataReceived(device: BluetoothDevice, bytes: ByteArray)
+        fun onServiceNotFound(device: BluetoothDevice)
     }
 
 
@@ -348,7 +355,7 @@ class DeviceManager(private val context: Context) {
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
-                       SecurityUtil.getRollingId()
+                        SecurityUtil.getRollingId()
                     )
                 }
                 else -> {

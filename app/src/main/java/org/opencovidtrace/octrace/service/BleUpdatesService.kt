@@ -2,6 +2,7 @@ package org.opencovidtrace.octrace.service
 
 import android.Manifest
 import android.app.*
+import android.app.NotificationManager.IMPORTANCE_LOW
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanResult
 import android.content.BroadcastReceiver
@@ -61,22 +62,21 @@ class BleUpdatesService : Service() {
             // Android O requires a Notification Channel.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val name: CharSequence = getString(R.string.app_name)
-
-                val channel = NotificationChannel(
-                    SILENT_CHANNEL_ID, name,
-                    NotificationManager.IMPORTANCE_LOW
-                )
-
+                val channel = NotificationChannel(SILENT_CHANNEL_ID, name, IMPORTANCE_LOW)
                 createNotificationChannel(channel)
             }
         }
         deviceManager.setDeviceStatusListener(object : DeviceManager.DeviceStatusListener {
             override fun onDataReceived(device: BluetoothDevice, bytes: ByteArray) {
-                val utfString = bytes.contentToString()
-                foundedDevices.firstOrNull { it.receiveInfo == utfString }?.let {
+                val bytesString = bytes.contentToString()
+                foundedDevices.firstOrNull { it.device.address == device.address }?.let {
+                    it.receiveInfo=bytesString
+                }
+            }
 
-                } ?: kotlin.run {
-                    foundedDevices.add(ConnectedDevice(device, utfString))
+            override fun onServiceNotFound(device: BluetoothDevice) {
+                foundedDevices.firstOrNull { it.device.address == device.address }?.let {
+                    it.receiveInfo="service not found"
                 }
             }
 
@@ -233,7 +233,7 @@ class BleUpdatesService : Service() {
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(pendingIntent)
         builder.priority =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) NotificationManager.IMPORTANCE_LOW
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) IMPORTANCE_LOW
             else Notification.PRIORITY_LOW
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
