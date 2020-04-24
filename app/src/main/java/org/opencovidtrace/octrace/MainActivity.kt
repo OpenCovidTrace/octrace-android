@@ -33,7 +33,6 @@ import org.opencovidtrace.octrace.service.BleUpdatesService
 import org.opencovidtrace.octrace.service.TrackingService
 import org.opencovidtrace.octrace.storage.KeyManager
 
-
 class MainActivity : AppCompatActivity() {
 
     companion object {
@@ -75,9 +74,7 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment)
         navView.setupWithNavController(navController)
 
-        if (KeyManager.hasKey(this)) {
-
-        } else {
+        if (!KeyManager.hasKey()) {
             val intent = Intent(this, OnboardingActivity::class.java)
 
             intent.putExtra(STAGE_EXTRA, OnboardingStage.WELCOME)
@@ -89,7 +86,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (KeyManager.hasKey(this)) {
+        if (KeyManager.hasKey()) {
             requestEnableTracking()
         }
     }

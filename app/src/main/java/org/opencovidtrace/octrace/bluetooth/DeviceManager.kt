@@ -1,21 +1,15 @@
 package org.opencovidtrace.octrace.bluetooth
 
-import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.AsyncTask
 import android.os.ParcelUuid
 import org.opencovidtrace.octrace.data.Enums
-import org.opencovidtrace.octrace.data.LogTableValue
-import org.opencovidtrace.octrace.di.DatabaseProvider
-import org.opencovidtrace.octrace.ext.data.add
 import org.opencovidtrace.octrace.ext.data.insertLogs
 import org.opencovidtrace.octrace.ext.text.getAndroidId
 import org.opencovidtrace.octrace.ext.text.toByteArrayUTF
 import org.opencovidtrace.octrace.ext.text.toStringUTF
-import org.opencovidtrace.octrace.utils.DoAsync
 import java.util.*
 
 
@@ -75,7 +69,6 @@ class DeviceManager(private val context: Context) {
      * Start searching Bluetooth LE devices according to the selected device type
      * and return one by one found devices via devicesCallback
      *
-     * @param uuid a uuid of devices for searching
      * @param devicesCallback a callback for found devices
      *
      */

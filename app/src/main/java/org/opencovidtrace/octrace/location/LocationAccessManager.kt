@@ -25,24 +25,23 @@ object LocationAccessManager {
             init(ctx)
         }
 
-        fusedLocationClient!!.requestLocationUpdates(locationRequest, locationCallback, null)
+        fusedLocationClient?.requestLocationUpdates(locationRequest, locationCallback, null)
     }
 
     fun removeConsumer(locationCallback: LocationCallback) {
-        if (fusedLocationClient != null) {
-            fusedLocationClient!!.removeLocationUpdates(locationCallback)
-        }
+            fusedLocationClient?.removeLocationUpdates(locationCallback)
     }
 
     @SuppressLint("MissingPermission")
     private fun init(ctx: Context) {
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(ctx)
-
-        fusedLocationClient!!.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
-                LocationUpdateManager.updateLocation(
-                    location
-                )
+        LocationServices.getFusedLocationProviderClient(ctx).apply {
+            fusedLocationClient=this
+            lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    LocationUpdateManager.updateLocation(
+                        location
+                    )
+                }
             }
         }
     }

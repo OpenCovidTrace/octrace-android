@@ -18,7 +18,6 @@ import org.opencovidtrace.octrace.R
 import org.opencovidtrace.octrace.bluetooth.DeviceManager
 import org.opencovidtrace.octrace.data.ConnectedDevice
 import org.opencovidtrace.octrace.di.BluetoothManagerProvider
-import org.opencovidtrace.octrace.di.DatabaseProvider
 import org.opencovidtrace.octrace.ext.access.isNotGranted
 import org.opencovidtrace.octrace.ext.data.insertLogs
 import org.opencovidtrace.octrace.ext.text.dateTimeFormat

@@ -1,21 +1,34 @@
 package org.opencovidtrace.octrace.storage
 
-import android.content.Context
+import org.opencovidtrace.octrace.di.ContextProvider
+import org.opencovidtrace.octrace.utils.SecurityUtil
 
 object KeyManager : PreferencesHolder("key") {
 
+    private val context by ContextProvider()
+
     private const val TRACING_KEY = "tracingKey"
 
-    fun getKey(ctx: Context): ByteArray? {
-        return getString(ctx, TRACING_KEY)?.toByteArray()
+    private fun getKey(): ByteArray? {
+        return getString(context, TRACING_KEY)?.toByteArray()
     }
 
-    fun setKey(ctx: Context, value: ByteArray) {
-        setString(ctx, TRACING_KEY, String(value))
+    private fun getTracingKey(): ByteArray {
+        return getKey() ?: SecurityUtil.generateKey().apply {
+            setKey(this)
+        }
     }
 
-    fun hasKey(ctx: Context): Boolean {
-        return getKey(ctx) != null
+    fun setKey(value: ByteArray) {
+        setString(context, TRACING_KEY, String(value))
+    }
+
+    fun hasKey(): Boolean {
+        return getKey() != null
+    }
+
+    fun getDailyKey(dayNumber: Int): ByteArray {
+        return SecurityUtil.getDailyKey(getTracingKey(), dayNumber)
     }
 
 }
