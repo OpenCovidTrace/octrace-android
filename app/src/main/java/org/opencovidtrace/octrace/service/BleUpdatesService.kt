@@ -21,7 +21,6 @@ import org.opencovidtrace.octrace.di.BluetoothManagerProvider
 import org.opencovidtrace.octrace.ext.access.isNotGranted
 import org.opencovidtrace.octrace.ext.data.insertLogs
 import org.opencovidtrace.octrace.ext.text.dateTimeFormat
-import org.opencovidtrace.octrace.ext.text.toStringUTF
 import java.util.*
 
 class BleUpdatesService : Service() {
@@ -73,7 +72,7 @@ class BleUpdatesService : Service() {
         }
         deviceManager.setDeviceStatusListener(object : DeviceManager.DeviceStatusListener {
             override fun onDataReceived(device: BluetoothDevice, bytes: ByteArray) {
-                val utfString = bytes.toStringUTF()
+                val utfString = bytes.contentToString()
                 foundedDevices.firstOrNull { it.receiveInfo == utfString }?.let {
 
                 } ?: kotlin.run {
@@ -247,7 +246,7 @@ class BleUpdatesService : Service() {
         val service: BleUpdatesService get() = this@BleUpdatesService
     }
 
-    fun serviceIsStarted(context: Context): Boolean {
+    private fun serviceIsStarted(context: Context): Boolean {
         val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         for (service in manager.getRunningServices(Int.MAX_VALUE)) {
             if (javaClass.name == service.service.className) {

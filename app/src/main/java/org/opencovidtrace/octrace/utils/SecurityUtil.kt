@@ -23,10 +23,8 @@ object SecurityUtil {
         return bytes
     }
 
+    fun getDailyKey(tracingKey: ByteArray): ByteArray = getDailyKey(tracingKey, currentDayNumber())
 
-    fun getDailyKey(tracingKey: ByteArray): ByteArray {
-        return getDailyKey(tracingKey, currentDayNumber())
-    }
 
     fun getDailyKey(tracingKey: ByteArray, dayNumber: Int): ByteArray {
         var info = "CT-DTK".toByteArray()
@@ -46,7 +44,7 @@ object SecurityUtil {
         return getRollingId(dailyKey, getCurrentTimeIntervalNumber())
     }
 
-    fun getRollingId(dailyKey: ByteArray, timeIntervalNumber: Int): ByteArray {
+    private fun getRollingId(dailyKey: ByteArray, timeIntervalNumber: Int): ByteArray {
         var info = "CT-RPI".toByteArray()
         info += timeIntervalNumber.toByte()
         val bytes = hkdf.extract(info, dailyKey)

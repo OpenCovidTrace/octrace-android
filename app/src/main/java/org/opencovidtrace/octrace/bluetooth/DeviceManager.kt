@@ -7,9 +7,7 @@ import android.content.pm.PackageManager
 import android.os.ParcelUuid
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.ext.data.insertLogs
-import org.opencovidtrace.octrace.ext.text.getAndroidId
-import org.opencovidtrace.octrace.ext.text.toByteArrayUTF
-import org.opencovidtrace.octrace.ext.text.toStringUTF
+import org.opencovidtrace.octrace.utils.SecurityUtil
 import java.util.*
 
 
@@ -24,7 +22,6 @@ class DeviceManager(private val context: Context) {
     private var bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
     private var bluetoothManager: BluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-
 
     // To provide bluetooth communication
     private var bluetoothGatt: BluetoothGatt? = null
@@ -138,20 +135,6 @@ class DeviceManager(private val context: Context) {
             context,
             false,
             object : BluetoothGattCallback() {
-                override fun onCharacteristicWrite(
-                    gatt: BluetoothGatt?,
-                    characteristic: BluetoothGattCharacteristic?,
-                    status: Int
-                ) {
-                    super.onCharacteristicWrite(gatt, characteristic, status)
-                    insertLogs(
-                        "Success Characteristic Write",
-                        characteristic?.value.toStringUTF()
-                    )//
-
-
-                    characteristic?.let { bluetoothGatt?.readCharacteristic(it) }
-                }
 
                 override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
                     super.onMtuChanged(gatt, mtu, status)
@@ -159,11 +142,7 @@ class DeviceManager(private val context: Context) {
                     gatt?.discoverServices()
                 }
 
-                override fun onConnectionStateChange(
-                    gatt: BluetoothGatt,
-                    status: Int,
-                    newState: Int
-                ) {
+                override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
                     when (newState) {
                         BluetoothProfile.STATE_CONNECTED -> {
                             insertLogs("Device Connected", device.address)
@@ -196,10 +175,11 @@ class DeviceManager(private val context: Context) {
                         // change value
                         val characteristic =
                             service.getCharacteristic(MAIN_CHARACTERISTIC_UUID)
-                        characteristic.setValue(getAndroidId())
-                        // write
-                        bluetoothGatt?.writeCharacteristic(characteristic)
-                        hasServiceAndCharacteristic = true
+                        characteristic?.let {
+                            bluetoothGatt?.readCharacteristic(it)
+                            hasServiceAndCharacteristic = true
+                        }
+
                     }
 
                     if (!hasServiceAndCharacteristic) {
@@ -239,7 +219,7 @@ class DeviceManager(private val context: Context) {
         device: BluetoothDevice,
         characteristic: BluetoothGattCharacteristic
     ) {
-        insertLogs("Success Characteristic Read", characteristic.value.toStringUTF())
+        insertLogs("Success Characteristic Read ", characteristic.value?.contentToString()?:"is empty")
         deviceStatusListener?.onDataReceived(device, characteristic.value)
         closeConnection()
     }
@@ -264,7 +244,6 @@ class DeviceManager(private val context: Context) {
             insertLogs("Advertisement not supported", TAG)
             return false
         }
-        //        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
 
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothManager.adapter.bluetoothLeAdvertiser
@@ -295,7 +274,6 @@ class DeviceManager(private val context: Context) {
      * Stop Bluetooth advertisements.
      */
     fun stopAdvertising() {
-//        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothManager.adapter.bluetoothLeAdvertiser
         bluetoothLeAdvertiser?.let {
@@ -331,13 +309,13 @@ class DeviceManager(private val context: Context) {
     private fun createService(): BluetoothGattService {
         val service = BluetoothGattService(SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
 
-        val currentTime = BluetoothGattCharacteristic(
+        val characteristic = BluetoothGattCharacteristic(
             MAIN_CHARACTERISTIC_UUID,
-            BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
-            BluetoothGattCharacteristic.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE
+            BluetoothGattCharacteristic.PROPERTY_READ,
+            BluetoothGattCharacteristic.PERMISSION_READ
         )
 
-        service.addCharacteristic(currentTime)
+        service.addCharacteristic(characteristic)
 
         return service
     }
@@ -370,7 +348,7 @@ class DeviceManager(private val context: Context) {
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
-                        getAndroidId().toByteArrayUTF()
+                       SecurityUtil.getRollingId()
                     )
                 }
                 else -> {
@@ -384,26 +362,6 @@ class DeviceManager(private val context: Context) {
                         null
                     )
                 }
-            }
-        }
-
-        override fun onCharacteristicWriteRequest(
-            device: BluetoothDevice?, requestId: Int,
-            characteristic: BluetoothGattCharacteristic?,
-            preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray?
-        ) {
-            if (value != null) {
-                insertLogs("Client Characteristic Read ", value.toStringUTF())
-            }
-            device?.let { value?.let { deviceStatusListener?.onDataReceived(device, it) } }
-
-            if (responseNeeded) {
-                bluetoothGattServer?.sendResponse(
-                    device,
-                    requestId,
-                    BluetoothGatt.GATT_SUCCESS,
-                    0, byteArrayOf()
-                )
             }
         }
 

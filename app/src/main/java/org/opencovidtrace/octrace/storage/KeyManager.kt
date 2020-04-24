@@ -31,4 +31,5 @@ object KeyManager : PreferencesHolder("key") {
         return SecurityUtil.getDailyKey(getTracingKey(), dayNumber)
     }
 
+
 }
