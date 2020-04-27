@@ -14,7 +14,7 @@ import org.opencovidtrace.octrace.data.LogTableValue
         BtContactHealth::class,
         BtContact::class,
         BtEncounter::class],
-    version = 2
+    version = 3
 )
 
 @TypeConverters(DatabaseConverters::class)

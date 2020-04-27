@@ -31,6 +31,7 @@ import org.opencovidtrace.octrace.ext.access.withPermissions
 import org.opencovidtrace.octrace.location.LocationAccessManager
 import org.opencovidtrace.octrace.service.BleUpdatesService
 import org.opencovidtrace.octrace.service.TrackingService
+import org.opencovidtrace.octrace.storage.BtContactsManager
 import org.opencovidtrace.octrace.storage.KeyManager
 
 class MainActivity : AppCompatActivity() {
@@ -74,7 +75,11 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment)
         navView.setupWithNavController(navController)
 
-        if (!KeyManager.hasKey()) {
+        if (KeyManager.hasKey()) {
+
+            BtContactsManager.removeOldContacts()
+
+        } else {
             val intent = Intent(this, OnboardingActivity::class.java)
 
             intent.putExtra(STAGE_EXTRA, OnboardingStage.WELCOME)

@@ -192,7 +192,7 @@ class BleUpdatesService : Service() {
 
     private fun onBleDeviceFound(result: ScanResult) {
         if (foundedDevices.firstOrNull { it.device.address == result.device.address } == null) {
-            if (deviceManager.connectDevice(result.device, ::onBleDeviceConnect)) {
+            if (deviceManager.connectDevice(result, ::onBleDeviceConnect)) {
                 foundedDevices.add(ConnectedDevice(result.device))
                 insertLogs("DEVICE FOUND", result.toString())
             }

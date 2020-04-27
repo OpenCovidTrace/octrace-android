@@ -33,4 +33,6 @@ object LocationUpdateManager {
         }
     }
 
+    fun getLastLocation() = lastLocation
+
 }

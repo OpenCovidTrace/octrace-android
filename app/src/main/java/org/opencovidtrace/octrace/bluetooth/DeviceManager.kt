@@ -5,8 +5,13 @@ import android.bluetooth.le.*
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.ParcelUuid
+import android.util.Base64.DEFAULT
+import android.util.Base64.encodeToString
+import org.opencovidtrace.octrace.data.BtEncounter
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.ext.data.insertLogs
+import org.opencovidtrace.octrace.location.LocationUpdateManager
+import org.opencovidtrace.octrace.storage.BtContactsManager
 import org.opencovidtrace.octrace.utils.SecurityUtil
 import java.util.*
 
@@ -124,9 +129,10 @@ class DeviceManager(private val context: Context) {
      *
      */
     fun connectDevice(
-        device: BluetoothDevice,
+        scanResult: ScanResult,
         deviceConnectCallback: (BluetoothDevice, Boolean) -> Unit
     ): Boolean {
+        val device=scanResult.device
         if (isDeviceConnected()) {
             return false
         }
@@ -196,7 +202,7 @@ class DeviceManager(private val context: Context) {
                     status: Int
                 ) {
                     if (status == BluetoothGatt.GATT_SUCCESS) {
-                        handleCharacteristics(device, characteristic)
+                        handleCharacteristics(scanResult, characteristic)
                     }
                 }
 
@@ -219,14 +225,20 @@ class DeviceManager(private val context: Context) {
 
 
     private fun handleCharacteristics(
-        device: BluetoothDevice,
+        scanResult: ScanResult,
         characteristic: BluetoothGattCharacteristic
     ) {
         insertLogs(
             "Success Characteristic Read ",
             characteristic.value?.contentToString() ?: "is empty"
         )
-        deviceStatusListener?.onDataReceived(device, characteristic.value)
+        val base64 = encodeToString(characteristic.value, DEFAULT)
+        deviceStatusListener?.onDataReceived(scanResult.device, characteristic.value)
+        val location= LocationUpdateManager.getLastLocation()
+        location?.let {
+            BtContactsManager.addContact(base64, BtEncounter(scanResult.rssi,location))
+        }
+
         closeConnection()
     }
 
