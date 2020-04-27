@@ -1,2 +1,4 @@
-# octrace-android
-OpenCovidTrace iOS App
+# OpenCovidTrace Android App
+
+**Work in progress!**
+Android version is not yet fully implemented...
