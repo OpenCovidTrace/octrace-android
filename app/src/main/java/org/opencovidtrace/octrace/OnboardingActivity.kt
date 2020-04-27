@@ -45,7 +45,7 @@ class OnboardingActivity : AppCompatActivity() {
         button.setOnClickListener {
             when (stage) {
                 OnboardingStage.WELCOME -> {
-                    KeyManager.setKey(this, SecurityUtil.generateKey())
+                    KeyManager.setKey(SecurityUtil.generateKey())
 
                     goNext(OnboardingStage.LOCATION)
                 }

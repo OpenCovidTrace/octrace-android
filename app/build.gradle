@@ -49,4 +49,5 @@ dependencies {
 
     kapt "android.arch.persistence.room:compiler:2.2.5"
     implementation "androidx.room:room-ktx:2.2.5"
+    implementation "at.favre.lib:hkdf:1.0.2"
 }

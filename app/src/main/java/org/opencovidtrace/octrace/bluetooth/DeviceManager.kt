@@ -1,21 +1,18 @@
 package org.opencovidtrace.octrace.bluetooth
 
-import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.AsyncTask
 import android.os.ParcelUuid
+import android.util.Base64.DEFAULT
+import android.util.Base64.encodeToString
+import org.opencovidtrace.octrace.data.BtEncounter
 import org.opencovidtrace.octrace.data.Enums
-import org.opencovidtrace.octrace.data.LogTableValue
-import org.opencovidtrace.octrace.di.DatabaseProvider
-import org.opencovidtrace.octrace.ext.data.add
 import org.opencovidtrace.octrace.ext.data.insertLogs
-import org.opencovidtrace.octrace.ext.text.getAndroidId
-import org.opencovidtrace.octrace.ext.text.toByteArrayUTF
-import org.opencovidtrace.octrace.ext.text.toStringUTF
-import org.opencovidtrace.octrace.utils.DoAsync
+import org.opencovidtrace.octrace.location.LocationUpdateManager
+import org.opencovidtrace.octrace.storage.BtContactsManager
+import org.opencovidtrace.octrace.utils.SecurityUtil
 import java.util.*
 
 
@@ -23,14 +20,13 @@ class DeviceManager(private val context: Context) {
 
     companion object {
         private val TAG = DeviceManager::class.java.simpleName
-        val SERVICE_UUID: UUID = UUID.fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e")
+        val SERVICE_UUID: UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9f")
         val MAIN_CHARACTERISTIC_UUID: UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
     }
 
     private var bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
     private var bluetoothManager: BluetoothManager =
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-
 
     // To provide bluetooth communication
     private var bluetoothGatt: BluetoothGatt? = null
@@ -75,7 +71,6 @@ class DeviceManager(private val context: Context) {
      * Start searching Bluetooth LE devices according to the selected device type
      * and return one by one found devices via devicesCallback
      *
-     * @param uuid a uuid of devices for searching
      * @param devicesCallback a callback for found devices
      *
      */
@@ -134,9 +129,10 @@ class DeviceManager(private val context: Context) {
      *
      */
     fun connectDevice(
-        device: BluetoothDevice,
+        scanResult: ScanResult,
         deviceConnectCallback: (BluetoothDevice, Boolean) -> Unit
     ): Boolean {
+        val device=scanResult.device
         if (isDeviceConnected()) {
             return false
         }
@@ -145,20 +141,6 @@ class DeviceManager(private val context: Context) {
             context,
             false,
             object : BluetoothGattCallback() {
-                override fun onCharacteristicWrite(
-                    gatt: BluetoothGatt?,
-                    characteristic: BluetoothGattCharacteristic?,
-                    status: Int
-                ) {
-                    super.onCharacteristicWrite(gatt, characteristic, status)
-                    insertLogs(
-                        "Success Characteristic Write",
-                        characteristic?.value.toStringUTF()
-                    )//
-
-
-                    characteristic?.let { bluetoothGatt?.readCharacteristic(it) }
-                }
 
                 override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
                     super.onMtuChanged(gatt, mtu, status)
@@ -200,16 +182,16 @@ class DeviceManager(private val context: Context) {
                     var hasServiceAndCharacteristic = false
                     val service = gatt.getService(SERVICE_UUID)
                     if (service != null) {
-                        // change value
                         val characteristic =
                             service.getCharacteristic(MAIN_CHARACTERISTIC_UUID)
-                        characteristic.setValue(getAndroidId())
-                        // write
-                        bluetoothGatt?.writeCharacteristic(characteristic)
-                        hasServiceAndCharacteristic = true
-                    }
+                        characteristic?.let {
+                            bluetoothGatt?.readCharacteristic(it)
+                            hasServiceAndCharacteristic = true
+                        }
 
+                    }
                     if (!hasServiceAndCharacteristic) {
+                        deviceStatusListener?.onServiceNotFound(device)
                         closeConnection()
                     }
                 }
@@ -220,7 +202,7 @@ class DeviceManager(private val context: Context) {
                     status: Int
                 ) {
                     if (status == BluetoothGatt.GATT_SUCCESS) {
-                        handleCharacteristics(device, characteristic)
+                        handleCharacteristics(scanResult, characteristic)
                     }
                 }
 
@@ -243,17 +225,27 @@ class DeviceManager(private val context: Context) {
 
 
     private fun handleCharacteristics(
-        device: BluetoothDevice,
+        scanResult: ScanResult,
         characteristic: BluetoothGattCharacteristic
     ) {
-        insertLogs("Success Characteristic Read", characteristic.value.toStringUTF())
-        deviceStatusListener?.onDataReceived(device, characteristic.value)
+        insertLogs(
+            "Success Characteristic Read ",
+            characteristic.value?.contentToString() ?: "is empty"
+        )
+        val base64 = encodeToString(characteristic.value, DEFAULT)
+        deviceStatusListener?.onDataReceived(scanResult.device, characteristic.value)
+        val location= LocationUpdateManager.getLastLocation()
+        location?.let {
+            BtContactsManager.addContact(base64, BtEncounter(scanResult.rssi,location))
+        }
+
         closeConnection()
     }
 
 
     interface DeviceStatusListener {
         fun onDataReceived(device: BluetoothDevice, bytes: ByteArray)
+        fun onServiceNotFound(device: BluetoothDevice)
     }
 
 
@@ -271,7 +263,6 @@ class DeviceManager(private val context: Context) {
             insertLogs("Advertisement not supported", TAG)
             return false
         }
-        //        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
 
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothManager.adapter.bluetoothLeAdvertiser
@@ -302,7 +293,6 @@ class DeviceManager(private val context: Context) {
      * Stop Bluetooth advertisements.
      */
     fun stopAdvertising() {
-//        val bluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothManager.adapter.bluetoothLeAdvertiser
         bluetoothLeAdvertiser?.let {
@@ -338,13 +328,13 @@ class DeviceManager(private val context: Context) {
     private fun createService(): BluetoothGattService {
         val service = BluetoothGattService(SERVICE_UUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
 
-        val currentTime = BluetoothGattCharacteristic(
+        val characteristic = BluetoothGattCharacteristic(
             MAIN_CHARACTERISTIC_UUID,
-            BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_NOTIFY,
-            BluetoothGattCharacteristic.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE
+            BluetoothGattCharacteristic.PROPERTY_READ,
+            BluetoothGattCharacteristic.PERMISSION_READ
         )
 
-        service.addCharacteristic(currentTime)
+        service.addCharacteristic(characteristic)
 
         return service
     }
@@ -377,7 +367,7 @@ class DeviceManager(private val context: Context) {
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
-                        getAndroidId().toByteArrayUTF()
+                        SecurityUtil.getRollingId()
                     )
                 }
                 else -> {
@@ -391,26 +381,6 @@ class DeviceManager(private val context: Context) {
                         null
                     )
                 }
-            }
-        }
-
-        override fun onCharacteristicWriteRequest(
-            device: BluetoothDevice?, requestId: Int,
-            characteristic: BluetoothGattCharacteristic?,
-            preparedWrite: Boolean, responseNeeded: Boolean, offset: Int, value: ByteArray?
-        ) {
-            if (value != null) {
-                insertLogs("Client Characteristic Read ", value.toStringUTF())
-            }
-            device?.let { value?.let { deviceStatusListener?.onDataReceived(device, it) } }
-
-            if (responseNeeded) {
-                bluetoothGattServer?.sendResponse(
-                    device,
-                    requestId,
-                    BluetoothGatt.GATT_SUCCESS,
-                    0, byteArrayOf()
-                )
             }
         }
 

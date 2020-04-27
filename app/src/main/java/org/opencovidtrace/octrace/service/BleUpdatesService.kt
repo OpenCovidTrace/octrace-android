@@ -2,6 +2,7 @@ package org.opencovidtrace.octrace.service
 
 import android.Manifest
 import android.app.*
+import android.app.NotificationManager.IMPORTANCE_LOW
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanResult
 import android.content.BroadcastReceiver
@@ -18,11 +19,9 @@ import org.opencovidtrace.octrace.R
 import org.opencovidtrace.octrace.bluetooth.DeviceManager
 import org.opencovidtrace.octrace.data.ConnectedDevice
 import org.opencovidtrace.octrace.di.BluetoothManagerProvider
-import org.opencovidtrace.octrace.di.DatabaseProvider
 import org.opencovidtrace.octrace.ext.access.isNotGranted
 import org.opencovidtrace.octrace.ext.data.insertLogs
 import org.opencovidtrace.octrace.ext.text.dateTimeFormat
-import org.opencovidtrace.octrace.ext.text.toStringUTF
 import java.util.*
 
 class BleUpdatesService : Service() {
@@ -63,22 +62,21 @@ class BleUpdatesService : Service() {
             // Android O requires a Notification Channel.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val name: CharSequence = getString(R.string.app_name)
-
-                val channel = NotificationChannel(
-                    SILENT_CHANNEL_ID, name,
-                    NotificationManager.IMPORTANCE_LOW
-                )
-
+                val channel = NotificationChannel(SILENT_CHANNEL_ID, name, IMPORTANCE_LOW)
                 createNotificationChannel(channel)
             }
         }
         deviceManager.setDeviceStatusListener(object : DeviceManager.DeviceStatusListener {
             override fun onDataReceived(device: BluetoothDevice, bytes: ByteArray) {
-                val utfString = bytes.toStringUTF()
-                foundedDevices.firstOrNull { it.receiveInfo == utfString }?.let {
+                val bytesString = bytes.contentToString()
+                foundedDevices.firstOrNull { it.device.address == device.address }?.let {
+                    it.receiveInfo=bytesString
+                }
+            }
 
-                } ?: kotlin.run {
-                    foundedDevices.add(ConnectedDevice(device, utfString))
+            override fun onServiceNotFound(device: BluetoothDevice) {
+                foundedDevices.firstOrNull { it.device.address == device.address }?.let {
+                    it.receiveInfo="service not found"
                 }
             }
 
@@ -194,7 +192,7 @@ class BleUpdatesService : Service() {
 
     private fun onBleDeviceFound(result: ScanResult) {
         if (foundedDevices.firstOrNull { it.device.address == result.device.address } == null) {
-            if (deviceManager.connectDevice(result.device, ::onBleDeviceConnect)) {
+            if (deviceManager.connectDevice(result, ::onBleDeviceConnect)) {
                 foundedDevices.add(ConnectedDevice(result.device))
                 insertLogs("DEVICE FOUND", result.toString())
             }
@@ -235,7 +233,7 @@ class BleUpdatesService : Service() {
                 .setWhen(System.currentTimeMillis())
                 .setContentIntent(pendingIntent)
         builder.priority =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) NotificationManager.IMPORTANCE_LOW
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) IMPORTANCE_LOW
             else Notification.PRIORITY_LOW
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -248,7 +246,7 @@ class BleUpdatesService : Service() {
         val service: BleUpdatesService get() = this@BleUpdatesService
     }
 
-    fun serviceIsStarted(context: Context): Boolean {
+    private fun serviceIsStarted(context: Context): Boolean {
         val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         for (service in manager.getRunningServices(Int.MAX_VALUE)) {
             if (javaClass.name == service.service.className) {

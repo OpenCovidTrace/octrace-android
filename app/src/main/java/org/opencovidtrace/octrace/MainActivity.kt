@@ -31,8 +31,8 @@ import org.opencovidtrace.octrace.ext.access.withPermissions
 import org.opencovidtrace.octrace.location.LocationAccessManager
 import org.opencovidtrace.octrace.service.BleUpdatesService
 import org.opencovidtrace.octrace.service.TrackingService
+import org.opencovidtrace.octrace.storage.BtContactsManager
 import org.opencovidtrace.octrace.storage.KeyManager
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -75,7 +75,9 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment)
         navView.setupWithNavController(navController)
 
-        if (KeyManager.hasKey(this)) {
+        if (KeyManager.hasKey()) {
+
+            BtContactsManager.removeOldContacts()
 
         } else {
             val intent = Intent(this, OnboardingActivity::class.java)
@@ -89,7 +91,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (KeyManager.hasKey(this)) {
+        if (KeyManager.hasKey()) {
             requestEnableTracking()
         }
     }
@@ -131,8 +133,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode== Activity.RESULT_OK){
-            if (requestCode==REQUEST_BLUETOOTH)
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == REQUEST_BLUETOOTH)
                 startBleService()
         }
     }
