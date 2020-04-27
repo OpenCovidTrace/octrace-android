@@ -1,9 +1,7 @@
 package org.opencovidtrace.octrace.data
 
 import android.bluetooth.BluetoothDevice
-import androidx.room.Embedded
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import androidx.room.*
 import java.util.*
 
 data class ConnectedDevice(var device: BluetoothDevice, var receiveInfo: String? = null)
@@ -19,15 +17,27 @@ data class LogTableValue(
 }
 
 
-@Entity(tableName = "contact_health_table")
-data class BtContactHealth(@Embedded(prefix = "contact_") val contact: BtContact,
-                           var infected: Boolean =false,
-                           @PrimaryKey(autoGenerate = true) var id: Int? = null)
+@Entity(tableName = "contact_health_table",
+    indices = [Index(value = ["contact_id"], unique = true)])
+data class BtContactHealth(
+    @Embedded(prefix = "contact_") val contact: BtContact,
+    var infected: Boolean = false,
+    @PrimaryKey(autoGenerate = true) var id: Int? = null
+)
 
 
 @Entity(tableName = "contact_table")
-data class BtContact(@PrimaryKey val id: String,
-                     @Embedded(prefix = "encounters_") var encounters: BtEncounter)
+data class BtContact(@PrimaryKey val id: String)
+
+
+class ContactWithEncounters{
+    @Embedded lateinit var contactHealth: BtContactHealth
+    @Relation(
+        parentColumn = "contact_id",
+        entityColumn = "contactId"
+    ) lateinit var encounters: List<BtEncounter>
+}
+
 
 @Entity(tableName = "encounter_table")
 data class BtEncounter(
@@ -36,6 +46,7 @@ data class BtEncounter(
     var lng: Double,
     val accuracy: Int,
     val tst: Calendar = Calendar.getInstance(),
+    var contactId: String? = null,
     @PrimaryKey(autoGenerate = true) var id: Int? = null
 )
 
