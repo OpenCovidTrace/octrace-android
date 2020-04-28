@@ -7,9 +7,12 @@ import java.security.InvalidKeyException
 import java.security.NoSuchAlgorithmException
 import java.security.Security
 import javax.crypto.*
+import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
+
 object AESEncryptor {
+    private const val cipherInstance ="AES/CBC/PKCS5Padding"
 
     @SuppressLint("GetInstance")
     fun encrypt(input: ByteArray, keyBytes: ByteArray): ByteArray? {
@@ -19,16 +22,9 @@ object AESEncryptor {
             val skey = SecretKeySpec(keyBytes, "AES")
 
             synchronized(Cipher::class.java) {
-                val cipher = Cipher.getInstance("AES/ECB/PKCS7Padding")
-                cipher.init(Cipher.ENCRYPT_MODE, skey)
-
-                val cipherText = ByteArray(cipher.getOutputSize(input.size))
-                var ctLength = cipher.update(
-                    input, 0, input.size,
-                    cipherText, 0
-                )
-                ctLength += cipher.doFinal(cipherText, ctLength)
-                return cipherText
+                val cipher = Cipher.getInstance(cipherInstance)
+                cipher.init(Cipher.ENCRYPT_MODE, skey, generateIV())
+                return cipher.doFinal(input)
             }
         } catch (uee: UnsupportedEncodingException) {
             uee.printStackTrace()
@@ -50,15 +46,15 @@ object AESEncryptor {
     }
 
     @SuppressLint("GetInstance")
-    fun decryptWithAES(bytesToDecrypt: ByteArray,keyBytes: ByteArray): ByteArray? {
+    fun decryptWithAES(bytesToDecrypt: ByteArray, keyBytes: ByteArray): ByteArray? {
         Security.addProvider(BouncyCastleProvider())
 
         try {
             val skey = SecretKeySpec(keyBytes, "AES")
 
             synchronized(Cipher::class.java) {
-                val cipher = Cipher.getInstance("AES/ECB/PKCS7Padding")
-                cipher.init(Cipher.DECRYPT_MODE, skey)
+                val cipher = Cipher.getInstance(cipherInstance)
+                cipher.init(Cipher.DECRYPT_MODE, skey, generateIV())
 
                 val plainText = ByteArray(cipher.getOutputSize(bytesToDecrypt.size))
                 var ptLength = cipher.update(bytesToDecrypt, 0, bytesToDecrypt.size, plainText, 0)
@@ -84,4 +80,6 @@ object AESEncryptor {
 
         return null
     }
+
+    private fun generateIV(): IvParameterSpec = IvParameterSpec(ByteArray(16))
 }

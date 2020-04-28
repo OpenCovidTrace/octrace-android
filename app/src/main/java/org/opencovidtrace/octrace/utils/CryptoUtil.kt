@@ -175,13 +175,13 @@ object CryptoUtil {
 
         private fun getRollingId(dailyKey: ByteArray, enIntervalNumber: Int): ByteArray {
             val rpiKey = hkdf.extractAndExpand(byteArrayOf(), dailyKey, info, 16)
-
             var paddedData = rpiPrefix
             for (i in 6..11) {
                 paddedData += 0
             }
-            val dayBytes = ByteBuffer.allocate(BYTES).putInt(enIntervalNumber).array()
-            paddedData += dayBytes
+            val eninBytes =
+                ByteBuffer.allocate(BYTES).putInt(Integer.reverseBytes(enIntervalNumber)).array()
+            paddedData += eninBytes
             return encodeAES(paddedData, rpiKey)
         }
 
