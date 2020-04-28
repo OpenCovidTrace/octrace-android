@@ -1,11 +1,9 @@
 package org.opencovidtrace.octrace.utils
 
 import android.annotation.SuppressLint
-import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.io.UnsupportedEncodingException
 import java.security.InvalidKeyException
 import java.security.NoSuchAlgorithmException
-import java.security.Security
 import javax.crypto.*
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -16,7 +14,6 @@ object AESEncryptor {
 
     @SuppressLint("GetInstance")
     fun encrypt(input: ByteArray, keyBytes: ByteArray): ByteArray? {
-        Security.addProvider(BouncyCastleProvider())
 
         try {
             val skey = SecretKeySpec(keyBytes, "AES")
@@ -47,7 +44,6 @@ object AESEncryptor {
 
     @SuppressLint("GetInstance")
     fun decryptWithAES(bytesToDecrypt: ByteArray, keyBytes: ByteArray): ByteArray? {
-        Security.addProvider(BouncyCastleProvider())
 
         try {
             val skey = SecretKeySpec(keyBytes, "AES")
