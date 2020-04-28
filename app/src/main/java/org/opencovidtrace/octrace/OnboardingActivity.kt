@@ -11,7 +11,7 @@ import androidx.core.app.ActivityCompat
 import org.opencovidtrace.octrace.MainActivity.Companion.REQUEST_LOCATION
 import org.opencovidtrace.octrace.OnboardingActivity.Extra.STAGE_EXTRA
 import org.opencovidtrace.octrace.storage.KeyManager
-import org.opencovidtrace.octrace.utils.SecurityUtil
+import org.opencovidtrace.octrace.utils.CryptoUtil
 
 class OnboardingActivity : AppCompatActivity() {
 
@@ -45,7 +45,7 @@ class OnboardingActivity : AppCompatActivity() {
         button.setOnClickListener {
             when (stage) {
                 OnboardingStage.WELCOME -> {
-                    KeyManager.setKey(SecurityUtil.generateKey())
+                    KeyManager.setKey(CryptoUtil.generateKey(32))
 
                     goNext(OnboardingStage.LOCATION)
                 }

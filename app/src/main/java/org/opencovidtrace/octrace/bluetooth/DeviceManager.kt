@@ -5,14 +5,13 @@ import android.bluetooth.le.*
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.ParcelUuid
-import android.util.Base64.DEFAULT
-import android.util.Base64.encodeToString
 import org.opencovidtrace.octrace.data.BtEncounter
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.ext.data.insertLogs
 import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.storage.BtContactsManager
-import org.opencovidtrace.octrace.utils.SecurityUtil
+import org.opencovidtrace.octrace.utils.CryptoUtil
+import org.opencovidtrace.octrace.utils.CryptoUtil.base64EncodedString
 import java.util.*
 
 
@@ -124,15 +123,12 @@ class DeviceManager(private val context: Context) {
 
     /**
      * Arrange connection to the selected device, and read characteristics of the identified device type
-     *
-     * @param device instance of BluetoothDevice that was received during scanning process
-     *
      */
     fun connectDevice(
         scanResult: ScanResult,
         deviceConnectCallback: (BluetoothDevice, Boolean) -> Unit
     ): Boolean {
-        val device=scanResult.device
+        val device = scanResult.device
         if (isDeviceConnected()) {
             return false
         }
@@ -232,11 +228,11 @@ class DeviceManager(private val context: Context) {
             "Success Characteristic Read ",
             characteristic.value?.contentToString() ?: "is empty"
         )
-        val base64 = encodeToString(characteristic.value, DEFAULT)
+        val base64 = characteristic.value.base64EncodedString()
         deviceStatusListener?.onDataReceived(scanResult.device, characteristic.value)
-        val location= LocationUpdateManager.getLastLocation()
+        val location = LocationUpdateManager.getLastLocation()
         location?.let {
-            BtContactsManager.addContact(base64, BtEncounter(scanResult.rssi,location))
+            BtContactsManager.addContact(base64, BtEncounter(scanResult.rssi, location))
         }
 
         closeConnection()
@@ -295,9 +291,7 @@ class DeviceManager(private val context: Context) {
     fun stopAdvertising() {
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothManager.adapter.bluetoothLeAdvertiser
-        bluetoothLeAdvertiser?.let {
-            it.stopAdvertising(advertiseCallback)
-        } ?: insertLogs("Failed to create advertiser", TAG)
+        bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) ?: insertLogs("Failed to create advertiser", TAG)
         advertisingActive = false
         insertLogs("Stop Advertising", TAG)
     }
@@ -358,7 +352,6 @@ class DeviceManager(private val context: Context) {
             device: BluetoothDevice, requestId: Int, offset: Int,
             characteristic: BluetoothGattCharacteristic
         ) {
-            val now = System.currentTimeMillis()
             when (characteristic.uuid) {
                 MAIN_CHARACTERISTIC_UUID -> {
                     insertLogs("Read Server Characteristic", characteristic.uuid.toString())
@@ -367,7 +360,7 @@ class DeviceManager(private val context: Context) {
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
-                        SecurityUtil.getRollingId()
+                        CryptoUtil.getRollingId()
                     )
                 }
                 else -> {

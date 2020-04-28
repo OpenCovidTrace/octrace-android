@@ -54,4 +54,5 @@ open class PreferencesHolder(private val preferencesName: String) {
         editor.apply()
     }
 
+
 }

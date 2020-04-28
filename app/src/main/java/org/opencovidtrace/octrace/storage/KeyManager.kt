@@ -1,22 +1,26 @@
 package org.opencovidtrace.octrace.storage
 
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import org.opencovidtrace.octrace.di.ContextProvider
-import org.opencovidtrace.octrace.utils.SecurityUtil
+import org.opencovidtrace.octrace.utils.CryptoUtil
+
 
 object KeyManager : PreferencesHolder("key") {
 
     private val context by ContextProvider()
 
     private const val TRACING_KEY = "tracingKey"
+    private const val DAILY_KEYS = "dailyKeys"
+
+    /// Used in AG spec v1 and as onboarding indicator
+
+    fun getTracingKey(): ByteArray {
+        return getKey() ?: CryptoUtil.generateKey(32).apply { setKey(this) }
+    }
 
     private fun getKey(): ByteArray? {
         return getString(context, TRACING_KEY)?.toByteArray()
-    }
-
-    private fun getTracingKey(): ByteArray {
-        return getKey() ?: SecurityUtil.generateKey().apply {
-            setKey(this)
-        }
     }
 
     fun setKey(value: ByteArray) {
@@ -27,9 +31,22 @@ object KeyManager : PreferencesHolder("key") {
         return getKey() != null
     }
 
-    fun getDailyKey(dayNumber: Int): ByteArray {
-        return SecurityUtil.getDailyKey(getTracingKey(), dayNumber)
+    /// Used in AG spec v1.1
+    ////////////////////
+
+    fun getDailyKeys(): HashMap<Int, ByteArray> {
+        val storedHashMapString = getString(context, DAILY_KEYS)
+        (Gson().fromJson(storedHashMapString) as? HashMap<Int, ByteArray>)?.let {
+            return it
+        }?: kotlin.run { return hashMapOf() }
     }
 
+    fun setDailyKeys(newValue: HashMap<Int, ByteArray>) {
+        val hashMapString = Gson().toJson(newValue)
+        setString(context, DAILY_KEYS, hashMapString)
+    }
+
+    inline fun <reified T> Gson.fromJson(json: String?) =
+        this.fromJson<T>(json, object : TypeToken<T>() {}.type)
 
 }

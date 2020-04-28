@@ -4,7 +4,7 @@ import java.util.*
 
 object DataManager {
 
-    private const val maxDays = 14
+    const val maxDays = 14
 
     fun expirationDate(): Calendar = Calendar.getInstance().apply { add(Calendar.DATE, -maxDays) }
 
