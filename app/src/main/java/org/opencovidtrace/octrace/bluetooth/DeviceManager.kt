@@ -112,13 +112,13 @@ class DeviceManager(private val context: Context) {
      * Stop Bluetooth LE scanning process
      */
     fun stopSearchDevices() {
+        scanActive = false
         bluetoothAdapter?.isDiscovering?.let {
             bluetoothAdapter?.cancelDiscovery()
         }
         scanCallback?.let { bluetoothAdapter?.bluetoothLeScanner?.stopScan(it) }
         scanCallback = null
         insertLogs("Stop Scan", TAG)
-        scanActive = false
     }
 
     /**
@@ -291,7 +291,7 @@ class DeviceManager(private val context: Context) {
     fun stopAdvertising() {
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothManager.adapter.bluetoothLeAdvertiser
-        bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback) ?: insertLogs("Failed to create advertiser", TAG)
+        bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback)
         advertisingActive = false
         insertLogs("Stop Advertising", TAG)
     }

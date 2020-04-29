@@ -3,6 +3,7 @@ package org.opencovidtrace.octrace.service
 import android.Manifest
 import android.app.*
 import android.app.NotificationManager.IMPORTANCE_LOW
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanResult
 import android.content.BroadcastReceiver
@@ -10,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.location.LocationManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -18,11 +20,13 @@ import org.opencovidtrace.octrace.MainActivity
 import org.opencovidtrace.octrace.R
 import org.opencovidtrace.octrace.bluetooth.DeviceManager
 import org.opencovidtrace.octrace.data.ConnectedDevice
+import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.di.BluetoothManagerProvider
 import org.opencovidtrace.octrace.ext.access.isNotGranted
 import org.opencovidtrace.octrace.ext.data.insertLogs
 import org.opencovidtrace.octrace.ext.text.dateTimeFormat
 import java.util.*
+
 
 class BleUpdatesService : Service() {
 
@@ -45,16 +49,39 @@ class BleUpdatesService : Service() {
     private val foundedDevices = mutableSetOf<ConnectedDevice>()
 
     private val deviceManager by BluetoothManagerProvider()
-    private var tickReceiver: TickReceiver? = null
 
 
-    inner class TickReceiver : BroadcastReceiver() {
+    private var bluetoothState: Int = -1
+
+    private val bluetoothReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            println("BluetoothReceiver onReceive")
+            val action = intent.action
+            if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
+                bluetoothState =
+                    intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                println("BluetoothReceiver onReceive $bluetoothState")
+                if (serviceIsRunningInForeground(applicationContext)) {
+                    notificationManager?.notify(NOTIFICATION_ID, getNotification())
+                }
+                when (bluetoothState) {
+                    BluetoothAdapter.STATE_OFF -> stopBleService()
+                    BluetoothAdapter.STATE_ON -> {
+                        startAdvertising()
+                        requestBleUpdates()
+                    }
+                }
+            }
+        }
+    }
+    private val tickReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (serviceIsRunningInForeground(applicationContext)) {
                 notificationManager?.notify(NOTIFICATION_ID, getNotification())
             }
         }
     }
+
 
     override fun onCreate() {
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).apply {
@@ -70,19 +97,22 @@ class BleUpdatesService : Service() {
             override fun onDataReceived(device: BluetoothDevice, bytes: ByteArray) {
                 val bytesString = bytes.contentToString()
                 foundedDevices.firstOrNull { it.device.address == device.address }?.let {
-                    it.receiveInfo=bytesString
+                    it.receiveInfo = bytesString
                 }
             }
 
             override fun onServiceNotFound(device: BluetoothDevice) {
                 foundedDevices.firstOrNull { it.device.address == device.address }?.let {
-                    it.receiveInfo="service not found"
+                    it.receiveInfo = "service not found"
                 }
             }
 
         })
-        tickReceiver = TickReceiver()
+        bluetoothState =
+            if (deviceManager.checkBluetooth() == Enums.ENABLED) BluetoothAdapter.STATE_ON
+            else BluetoothAdapter.STATE_OFF
         registerReceiver(tickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
+        registerReceiver(bluetoothReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
     }
 
     private fun initScanWorkTimer() {
@@ -163,12 +193,18 @@ class BleUpdatesService : Service() {
 
     override fun onDestroy() {
         unregisterReceiver(tickReceiver)
+        unregisterReceiver(bluetoothReceiver)
         insertLogs("onDestroy", TAG)
     }
 
 
     fun requestBleUpdates() {
-        if (hasPermissions()) {
+        val locationManager =
+            getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        val gpsEnabled =
+            locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                ?: false
+        if (hasPermissions() && gpsEnabled) {
             if (!serviceIsStarted(applicationContext))
                 startService(Intent(applicationContext, BleUpdatesService::class.java))
             try {
@@ -206,12 +242,15 @@ class BleUpdatesService : Service() {
             }
     }
 
-    fun stopBleService(){
+    fun stopBleService() {
         deviceManager.stopSearchDevices()
         deviceManager.closeConnection()
         deviceManager.stopServer()
         deviceManager.stopAdvertising()
-        stopSelf()
+        scanWorkTimer?.cancel()
+        scanWorkTimer = null
+        scanPauseTimer?.cancel()
+        scanPauseTimer = null
     }
 
 
@@ -226,7 +265,7 @@ class BleUpdatesService : Service() {
         val builder: NotificationCompat.Builder =
             NotificationCompat.Builder(this, SILENT_CHANNEL_ID)
                 .setContentText(text)
-                .setContentTitle("TEST TITLE")
+                .setContentTitle(getBluetoothState())
                 .setOngoing(true)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setTicker(text)
@@ -240,6 +279,18 @@ class BleUpdatesService : Service() {
             builder.setCategory(Notification.CATEGORY_SERVICE)
         }
         return builder.build()
+    }
+
+    private fun getBluetoothState(): String {
+        return getString(
+            when (bluetoothState) {
+                BluetoothAdapter.STATE_OFF -> R.string.bluetooth_off
+                BluetoothAdapter.STATE_TURNING_OFF -> R.string.turning_bluetooth_off
+                BluetoothAdapter.STATE_ON -> R.string.bluetooth_on
+                BluetoothAdapter.STATE_TURNING_ON -> R.string.turning_bluetooth_on
+                else -> R.string.bluetooth_unknown_state
+            }
+        )
     }
 
     inner class LocalBinder : Binder() {

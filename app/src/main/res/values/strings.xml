@@ -9,6 +9,11 @@
     <!--Other-->
     <string name="enable">Enable</string>
     <string name="done">Done</string>
+    <string name="bluetooth_off">Bluetooth off</string>
+    <string name="turning_bluetooth_off">Turning Bluetooth off…</string>
+    <string name="bluetooth_on">Bluetooth on</string>
+    <string name="turning_bluetooth_on">Turning Bluetooth on…</string>
+    <string name="bluetooth_unknown_state">Bluetooth unknown state</string>
     <!-- MainActivity -->
     <string name="title_newsroom">Newsroom</string>
     <string name="title_map">Map</string>
