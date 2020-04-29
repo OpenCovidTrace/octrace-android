@@ -158,6 +158,7 @@ class BleUpdatesService : Service() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        insertLogs("onConfigurationChanged", TAG)
         changingConfiguration = true
     }
 
@@ -169,14 +170,14 @@ class BleUpdatesService : Service() {
     }
 
     override fun onRebind(intent: Intent) {
-        insertLogs("onCreate", "onRebind")
+        insertLogs("onRebind", TAG)
         stopForeground(true)
         changingConfiguration = false
         super.onRebind(intent)
     }
 
     override fun onUnbind(intent: Intent): Boolean {
-        insertLogs("onCreate", "onUnbind")
+        insertLogs("onUnbind", TAG)
         if (!changingConfiguration) {
             startForeground(NOTIFICATION_ID, getNotification())
         }

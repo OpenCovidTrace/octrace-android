@@ -12,8 +12,10 @@ import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import org.opencovidtrace.octrace.location.LocationUpdateManager
+import kotlinx.android.synthetic.main.fragment_map.*
 import org.opencovidtrace.octrace.R
+import org.opencovidtrace.octrace.location.LocationUpdateManager
+import org.opencovidtrace.octrace.ui.map.logs.LogsFragment
 
 class MapFragment : Fragment(), OnMapReadyCallback {
 
@@ -33,8 +35,13 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         mapView.onCreate(savedInstanceState)
 
         mapView.getMapAsync(this)
-
         return root
+    }
+
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        logsImageButton.setOnClickListener { showLogs() }
     }
 
     override fun onMapReady(map: GoogleMap?) {
@@ -49,6 +56,17 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             )
             map?.isMyLocationEnabled = true
         }
+    }
+
+    private fun showLogs(){
+      /*  activity?.let {
+            val dialog = LogsFragment()
+            dialog.show(it.supportFragmentManager, dialog.tag)
+        }*/
+        val dialog = LogsFragment()
+        dialog.show(childFragmentManager, dialog.tag)
+/*        val sheet = DemoBottomSheetFragment()
+        sheet.show(childFragmentManager, "DemoBottomSheetFragment")*/
     }
 
     override fun onResume() {
@@ -92,5 +110,16 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
         mapView.onDestroy()
     }
+/*
+    class DemoBottomSheetFragment : SuperBottomSheetFragment() {
 
+        override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+            super.onCreateView(inflater, container, savedInstanceState)
+            return inflater.inflate(R.layout.fragment_logs, container, false)
+        }
+
+        override fun getCornerRadius() = requireContext().resources.getDimension(R.dimen.demo_sheet_rounded_corner)
+
+        override fun getStatusBarColor() = Color.RED
+    }*/
 }

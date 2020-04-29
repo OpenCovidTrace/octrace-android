@@ -52,4 +52,5 @@ dependencies {
     implementation "at.favre.lib:hkdf:1.0.2"
 
     implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.github.andrefrsousa:SuperBottomSheet:1.5.0'
 }

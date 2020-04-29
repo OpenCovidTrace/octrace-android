@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     private var bound = false
     private val deviceManager by BluetoothManagerProvider()
     private var needStartBleService = false
+    var bluetoothAlert: AlertDialog.Builder? = null
 
     // Monitors the state of the connection to the service.
     private val serviceConnection: ServiceConnection =
@@ -234,16 +235,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showBluetoothDisabledError() {
-        AlertDialog.Builder(this).apply {
-            setTitle(R.string.bluetooth_turn_off)
-            setMessage(R.string.bluetooth_turn_off_description)
-            setCancelable(false)
-            setPositiveButton(R.string.enable) { _, _ ->
-                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                startActivityForResult(enableBtIntent, REQUEST_BLUETOOTH)
+        if (bluetoothAlert == null)
+            bluetoothAlert = AlertDialog.Builder(this).apply {
+                setTitle(R.string.bluetooth_turn_off)
+                setMessage(R.string.bluetooth_turn_off_description)
+                setCancelable(false)
+                setPositiveButton(R.string.enable) { _, _ ->
+                    val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                    startActivityForResult(enableBtIntent, REQUEST_BLUETOOTH)
+                    bluetoothAlert = null
+                }
+                setOnCancelListener { bluetoothAlert = null }
+                show()
             }
-            show()
-        }
     }
 
     private fun showBluetoothNotFoundError() {

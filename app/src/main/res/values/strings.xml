@@ -3,12 +3,15 @@
 
     <!--Errors-->
     <string name="bluetooth_turn_off">Bluetooth is powered off</string>
-    <string name="bluetooth_turn_off_description">To start turn on bluetooth in settings</string>
+    <string name="bluetooth_turn_off_description">Please turn on Bluetooth to enable automatic contact tracing!</string>
     <string name="bluetooth_do_not_support">Your smartphone does not support Bluetooth</string>
     <string name="bluetooth_do_not_support_description">Therefore, we will not be able to connect the device</string>
     <!--Other-->
     <string name="enable">Enable</string>
     <string name="done">Done</string>
+    <string name="close">Close</string>
+    <string name="clear">Clear</string>
+    <string name="logs">Logs</string>
     <string name="bluetooth_off">Bluetooth off</string>
     <string name="turning_bluetooth_off">Turning Bluetooth off…</string>
     <string name="bluetooth_on">Bluetooth on</string>
