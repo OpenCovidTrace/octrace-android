@@ -3,7 +3,11 @@ package org.opencovidtrace.octrace.data
 import android.bluetooth.BluetoothDevice
 import android.location.Location
 import androidx.room.*
+import org.opencovidtrace.octrace.ext.text.dateFullFormat
 import java.util.*
+
+const val ADV_TAG="ADV"
+const val SCAN_TAG="SCAN"
 
 data class ConnectedDevice(var device: BluetoothDevice, var receiveInfo: String? = null)
 
@@ -11,10 +15,13 @@ data class ConnectedDevice(var device: BluetoothDevice, var receiveInfo: String?
 data class LogTableValue(
     val event: String? = null,
     val additionalInfo: String? = null,
+    val tag: String? = null,
     val time: Calendar = Calendar.getInstance(),
     @PrimaryKey(autoGenerate = true) var id: Int? = null
 ) {
     fun getLogValue() = "$event: $additionalInfo"
+
+    fun getTimeWithTag() =  time.dateFullFormat() + if (tag.isNullOrEmpty()) "" else " - <$tag>"
 }
 
 

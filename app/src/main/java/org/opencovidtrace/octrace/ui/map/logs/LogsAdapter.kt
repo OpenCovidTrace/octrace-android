@@ -2,11 +2,9 @@ package org.opencovidtrace.octrace.ui.map.logs
 
 import android.view.ViewGroup
 import androidx.annotation.LayoutRes
-
 import kotlinx.android.synthetic.main.list_item_log.view.*
 import org.opencovidtrace.octrace.R
 import org.opencovidtrace.octrace.data.LogTableValue
-import org.opencovidtrace.octrace.ext.text.dateFullFormat
 import org.opencovidtrace.octrace.ui.base.BaseAdapter
 import org.opencovidtrace.octrace.ui.base.BaseViewHolder
 
@@ -27,7 +25,7 @@ class LogsAdapter : BaseAdapter<LogTableValue, LogsAdapter.ViewHolder>() {
 
         override fun updateView(item: LogTableValue) {
             with(itemView) {
-                dateTimeTextView.text = item.time.dateFullFormat()
+                dateTimeTextView.text = item.getTimeWithTag()
                 logValueTextView.text = item.getLogValue()
             }
         }

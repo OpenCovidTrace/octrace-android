@@ -231,7 +231,6 @@ class BleUpdatesService : Service() {
         if (foundedDevices.firstOrNull { it.device.address == result.device.address } == null) {
             if (deviceManager.connectDevice(result, ::onBleDeviceConnect)) {
                 foundedDevices.add(ConnectedDevice(result.device))
-                insertLogs("DEVICE FOUND", result.toString())
             }
         }
     }
@@ -298,6 +297,7 @@ class BleUpdatesService : Service() {
         val service: BleUpdatesService get() = this@BleUpdatesService
     }
 
+    @Suppress("DEPRECATION")
     private fun serviceIsStarted(context: Context): Boolean {
         val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         for (service in manager.getRunningServices(Int.MAX_VALUE)) {
@@ -310,6 +310,7 @@ class BleUpdatesService : Service() {
         return false
     }
 
+    @Suppress("DEPRECATION")
     fun serviceIsRunningInForeground(context: Context): Boolean {
         val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         for (service in manager.getRunningServices(Int.MAX_VALUE)) {
