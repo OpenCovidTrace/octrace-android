@@ -31,9 +31,7 @@ class StatusFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        changeStatusButton.setOnClickListener {
-            changeStatus()
-        }
+        changeStatusButton.setOnClickListener { changeStatus() }
         refreshStatus()
     }
 

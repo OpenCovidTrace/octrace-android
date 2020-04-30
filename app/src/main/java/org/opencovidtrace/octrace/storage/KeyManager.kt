@@ -1,7 +1,6 @@
 package org.opencovidtrace.octrace.storage
 
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import org.opencovidtrace.octrace.utils.CryptoUtil
 
 
@@ -43,7 +42,5 @@ object KeyManager : PreferencesHolder("key") {
         setString(DAILY_KEYS, hashMapString)
     }
 
-    inline fun <reified T> Gson.fromJson(json: String?) =
-        this.fromJson<T>(json, object : TypeToken<T>() {}.type)
 
 }

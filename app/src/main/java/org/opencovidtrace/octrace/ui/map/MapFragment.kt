@@ -16,6 +16,7 @@ import kotlinx.android.synthetic.main.fragment_map.*
 import org.opencovidtrace.octrace.R
 import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.ui.map.logs.LogsFragment
+import org.opencovidtrace.octrace.ui.map.qrcode.QrCodeFragment
 
 class MapFragment : Fragment(), OnMapReadyCallback {
 
@@ -42,6 +43,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         logsImageButton.setOnClickListener { showLogs() }
+        recordContactButton.setOnClickListener { showQrCode() }
     }
 
     override fun onMapReady(map: GoogleMap?) {
@@ -58,15 +60,14 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun showLogs(){
-      /*  activity?.let {
-            val dialog = LogsFragment()
-            dialog.show(it.supportFragmentManager, dialog.tag)
-        }*/
+    private fun showLogs() {
         val dialog = LogsFragment()
         dialog.show(childFragmentManager, dialog.tag)
-/*        val sheet = DemoBottomSheetFragment()
-        sheet.show(childFragmentManager, "DemoBottomSheetFragment")*/
+    }
+
+    private fun showQrCode() {
+        val dialog = QrCodeFragment()
+        dialog.show(childFragmentManager, dialog.tag)
     }
 
     override fun onResume() {

@@ -2,17 +2,16 @@ package org.opencovidtrace.octrace.storage
 
 import android.location.Location
 import com.google.gson.Gson
-import org.opencovidtrace.octrace.storage.KeyManager.fromJson
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
 object LocationBordersManager : PreferencesHolder("location-borders") {
 
-    private const val BORDERS_KEY = "borders"
+    private const val LOCATION_BORDERS = "locationBorders"
 
     fun getLocationBorders(): HashMap<Int, LocationBorder> {
-        val storedHashMapString = KeyManager.getString(BORDERS_KEY)
+        val storedHashMapString = KeyManager.getString(LOCATION_BORDERS)
         (Gson().fromJson(storedHashMapString) as? HashMap<Int, LocationBorder>)?.let {
             return it
         } ?: kotlin.run { return hashMapOf() }
@@ -20,7 +19,7 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
 
     fun setLocationBorders(newValue: HashMap<Int, LocationBorder>) {
         val hashMapString = Gson().toJson(newValue)
-        KeyManager.setString(BORDERS_KEY, hashMapString)
+        KeyManager.setString(LOCATION_BORDERS, hashMapString)
     }
 
 

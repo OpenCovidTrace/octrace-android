@@ -1,6 +1,6 @@
 package org.opencovidtrace.octrace.api
 
-import org.opencovidtrace.octrace.storage.KeysManager
+import org.opencovidtrace.octrace.data.KeysData
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -9,6 +9,6 @@ import retrofit2.http.POST
 interface ApiEndpoint {
 
     @POST("keys")
-    fun sendKeys(@Body keysData: KeysManager.KeysData): Call<String>
+    fun sendKeys(@Body keysData: KeysData): Call<String>
 
 }

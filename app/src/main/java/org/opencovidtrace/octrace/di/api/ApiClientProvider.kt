@@ -11,7 +11,7 @@ internal object ApiClientProvider : IndependentProvider<ApiClient>() {
 
     private val httpClient by HttpClientProvider()
 
-    private const val STORAGE_ENDPOINT = "https://storage.$API_BASE_URL/"
+    private const val STORAGE_ENDPOINT = "https://storage.$API_BASE_URL"
 
     override fun initInstance(): ApiClient = Retrofit.Builder()
         .baseUrl(STORAGE_ENDPOINT)

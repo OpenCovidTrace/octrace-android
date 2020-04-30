@@ -1,5 +1,7 @@
 package org.opencovidtrace.octrace.storage
 
+import org.opencovidtrace.octrace.data.Key
+import org.opencovidtrace.octrace.data.KeysData
 import org.opencovidtrace.octrace.di.api.ApiClientProvider
 import org.opencovidtrace.octrace.utils.CryptoUtil
 import org.opencovidtrace.octrace.utils.CryptoUtil.base64EncodedString
@@ -11,15 +13,15 @@ import kotlin.math.min
 
 object KeysManager : PreferencesHolder("keys") {
 
-    private const val LAST_UPLOAD_DAY_KEY = "lastUploadDay"
+    private const val LAST_UPLOAD_DAY = "lastUploadDay"
     private val apiClient by ApiClientProvider()
 
     private fun getLastUploadDay(): Int {
-        return getInt(LAST_UPLOAD_DAY_KEY)
+        return getInt(LAST_UPLOAD_DAY)
     }
 
     fun setLastUploadDay(value: Int) {
-        setInt(LAST_UPLOAD_DAY_KEY, value)
+        setInt(LAST_UPLOAD_DAY, value)
     }
 
     fun uploadNewKeys() {
@@ -67,13 +69,4 @@ object KeysManager : PreferencesHolder("keys") {
             })
     }
 
-    class KeysData {
-        var keys: MutableList<Key> = arrayListOf()
-    }
-
-    data class Key(
-        val value: String,
-        val day: Int,
-        val border: LocationBordersManager.LocationBorder
-    )
 }

@@ -2,6 +2,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
+apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion 29
@@ -59,4 +60,7 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-gson:2.6.2"
     implementation 'com.squareup.okhttp3:logging-interceptor:3.14.2'
     implementation 'com.github.andrefrsousa:SuperBottomSheet:1.5.0'
+    implementation 'com.google.firebase:firebase-messaging:20.1.6'
+
+    implementation 'com.google.zxing:core:3.3.3'
 }

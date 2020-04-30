@@ -21,7 +21,24 @@
         android:layout_marginBottom="16dp"
         android:contentDescription="@string/logs"
         android:src="@drawable/ic_bluetooth_black_24dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/recordContactButton"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/recordContactButton"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/input_height"
+        android:layout_marginStart="@dimen/margin_regular"
+        android:layout_marginEnd="@dimen/margin_regular"
+        android:layout_marginBottom="26dp"
+        android:background="@drawable/bg_rounded_red_button"
+        android:text="@string/record_contact"
+        android:textAlignment="center"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

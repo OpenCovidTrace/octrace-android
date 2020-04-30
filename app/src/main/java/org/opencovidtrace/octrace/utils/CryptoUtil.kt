@@ -192,5 +192,7 @@ object CryptoUtil {
 
     fun ByteArray.base64EncodedString(): String = Base64.encodeToString(this, Base64.DEFAULT)
 
+    fun String.base64DecodeByteArray(): ByteArray = Base64.decode(this, Base64.DEFAULT)
+
 
 }

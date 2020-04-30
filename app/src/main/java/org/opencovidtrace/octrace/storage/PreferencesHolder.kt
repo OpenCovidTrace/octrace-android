@@ -2,6 +2,8 @@ package org.opencovidtrace.octrace.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import org.opencovidtrace.octrace.di.ContextProvider
 
 open class PreferencesHolder(private val preferencesName: String) {
@@ -43,5 +45,7 @@ open class PreferencesHolder(private val preferencesName: String) {
         editor.apply()
     }
 
+    inline fun <reified T> Gson.fromJson(json: String?) =
+        this.fromJson<T>(json, object : TypeToken<T>() {}.type)
 
 }
