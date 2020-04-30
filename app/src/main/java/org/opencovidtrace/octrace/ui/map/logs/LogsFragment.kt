@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.andrefrsousa.superbottomsheet.SuperBottomSheetFragment
 import kotlinx.android.synthetic.main.fragment_logs.*
 import org.opencovidtrace.octrace.R
+import org.opencovidtrace.octrace.ext.ui.confirm
 
 
 class LogsFragment : SuperBottomSheetFragment() {
@@ -41,7 +42,7 @@ class LogsFragment : SuperBottomSheetFragment() {
         })
         closeImageButton.setOnClickListener { dismiss() }
         clearImageButton.setOnClickListener {
-            logsViewModel.removeOldContacts()
+            confirm(R.string.clear_logs) { logsViewModel.removeOldContacts() }
         }
     }
 

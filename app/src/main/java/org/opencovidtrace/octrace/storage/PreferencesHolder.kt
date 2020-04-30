@@ -2,54 +2,43 @@ package org.opencovidtrace.octrace.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import org.opencovidtrace.octrace.di.ContextProvider
 
 open class PreferencesHolder(private val preferencesName: String) {
 
-    private var preferences: SharedPreferences? = null
+    protected val context by ContextProvider()
 
-    private fun initPreferences(ctx: Context) {
-        if (preferences == null) {
-            preferences =
-                ctx.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
-        }
+    private val preferences: SharedPreferences by lazy {
+        context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
     }
 
-    fun getString(ctx: Context, key: String): String? {
-        initPreferences(ctx)
 
-        return preferences!!.getString(key, null)
+    fun getString(key: String): String? {
+        return preferences.getString(key, null)
     }
 
-    fun setString(
-        ctx: Context,
-        key: String,
-        value: String?
-    ) {
-        withEditor(ctx) { editor -> editor.putString(key, value) }
+    fun setString(key: String, value: String?) {
+        withEditor { editor -> editor.putString(key, value) }
     }
 
-    fun setInt(ctx: Context, key: String, value: Int) {
-        withEditor(ctx) { editor -> editor.putInt(key, value) }
+    fun getInt(key: String): Int {
+        return preferences.getInt(key, 0)
     }
 
-    fun setBoolean(
-        ctx: Context,
-        key: String,
-        value: Boolean
-    ) {
-        withEditor(ctx) { editor -> editor.putBoolean(key, value) }
+    fun setInt(key: String, value: Int) {
+        withEditor { editor -> editor.putInt(key, value) }
     }
 
-    fun remove(ctx: Context, key: String) {
-        withEditor(ctx) { editor -> editor.remove(key) }
+    fun setBoolean(key: String, value: Boolean) {
+        withEditor { editor -> editor.putBoolean(key, value) }
     }
 
-    private fun withEditor(
-        ctx: Context,
-        handler: (SharedPreferences.Editor) -> Unit
-    ) {
-        initPreferences(ctx)
-        val editor = preferences!!.edit()
+    fun remove(key: String) {
+        withEditor { editor -> editor.remove(key) }
+    }
+
+    private fun withEditor(handler: (SharedPreferences.Editor) -> Unit) {
+        val editor = preferences.edit()
         handler(editor)
         editor.apply()
     }

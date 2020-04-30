@@ -55,6 +55,11 @@ data class BtEncounter(
     var contactId: String? = null,
     @PrimaryKey(autoGenerate = true) var id: Int? = null
 ) {
-    constructor(rssi: Int, location: Location):this(rssi,location.latitude,location.longitude,location.accuracy)
+    constructor(rssi: Int, location: Location) : this(
+        rssi,
+        location.latitude,
+        location.longitude,
+        location.accuracy
+    )
 }
 
