@@ -30,8 +30,6 @@ class LogsAdapter : BaseAdapter<LogTableValue, LogsAdapter.ViewHolder>() {
             }
         }
     }
-
-
 }
 
 
