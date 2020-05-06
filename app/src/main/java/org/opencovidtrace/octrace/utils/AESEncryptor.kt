@@ -5,12 +5,11 @@ import java.io.UnsupportedEncodingException
 import java.security.InvalidKeyException
 import java.security.NoSuchAlgorithmException
 import javax.crypto.*
-import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 
 object AESEncryptor {
-    private const val cipherInstance ="AES/CBC/PKCS5Padding"
+    private const val cipherInstance ="AES/ECB/NoPadding"
 
     @SuppressLint("GetInstance")
     fun encrypt(input: ByteArray, keyBytes: ByteArray): ByteArray? {
@@ -20,7 +19,7 @@ object AESEncryptor {
 
             synchronized(Cipher::class.java) {
                 val cipher = Cipher.getInstance(cipherInstance)
-                cipher.init(Cipher.ENCRYPT_MODE, skey, generateIV())
+                cipher.init(Cipher.ENCRYPT_MODE, skey)
                 return cipher.doFinal(input)
             }
         } catch (uee: UnsupportedEncodingException) {
@@ -50,7 +49,7 @@ object AESEncryptor {
 
             synchronized(Cipher::class.java) {
                 val cipher = Cipher.getInstance(cipherInstance)
-                cipher.init(Cipher.DECRYPT_MODE, skey, generateIV())
+                cipher.init(Cipher.DECRYPT_MODE, skey)
 
                 val plainText = ByteArray(cipher.getOutputSize(bytesToDecrypt.size))
                 var ptLength = cipher.update(bytesToDecrypt, 0, bytesToDecrypt.size, plainText, 0)
@@ -77,5 +76,4 @@ object AESEncryptor {
         return null
     }
 
-    private fun generateIV(): IvParameterSpec = IvParameterSpec(ByteArray(16))
 }
