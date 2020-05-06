@@ -6,7 +6,7 @@ import org.opencovidtrace.octrace.utils.DoAsync
 
 private val database by DatabaseProvider()
 
-fun insertLogs(text: String, tag: String = "unknown") {
+fun insertLogs(text: String, tag: String) {
     LogTableValue(tag, text).add()
 }
 

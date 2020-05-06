@@ -35,21 +35,20 @@ class BleUpdatesService : Service() {
 
         private const val SILENT_CHANNEL_ID = "silent_channel_ble"
         private const val NOTIFICATION_ID = 7856234
+
+        private var isRunningInInForegroundService = false
     }
 
     private val binder: IBinder = LocalBinder()
 
     private var changingConfiguration = false
     private var notificationManager: NotificationManager? = null
-
     private var scanWorkTimer: Timer? = null
     private var scanPauseTimer: Timer? = null
 
     /* Collection of devices found */
     private val foundedDevices = mutableSetOf<ConnectedDevice>()
-
     private val deviceManager by BluetoothManagerProvider()
-
 
     private var bluetoothState: Int = -1
 
@@ -61,7 +60,7 @@ class BleUpdatesService : Service() {
                 bluetoothState =
                     intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
                 println("BluetoothReceiver onReceive $bluetoothState")
-                if (serviceIsRunningInForeground(applicationContext)) {
+                if (serviceIsRunningInForeground()) {
                     notificationManager?.notify(NOTIFICATION_ID, getNotification())
                 }
                 when (bluetoothState) {
@@ -76,7 +75,7 @@ class BleUpdatesService : Service() {
     }
     private val tickReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (serviceIsRunningInForeground(applicationContext)) {
+            if (serviceIsRunningInForeground()) {
                 notificationManager?.notify(NOTIFICATION_ID, getNotification())
             }
         }
@@ -84,6 +83,7 @@ class BleUpdatesService : Service() {
 
 
     override fun onCreate() {
+        insertLogs("onCreate", TAG)
         (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).apply {
             notificationManager = this
             // Android O requires a Notification Channel.
@@ -165,6 +165,7 @@ class BleUpdatesService : Service() {
     override fun onBind(intent: Intent): IBinder? {
         insertLogs("onBind", TAG)
         stopForeground(true)
+        isRunningInInForegroundService = false
         changingConfiguration = false
         return binder
     }
@@ -172,6 +173,7 @@ class BleUpdatesService : Service() {
     override fun onRebind(intent: Intent) {
         insertLogs("onRebind", TAG)
         stopForeground(true)
+        isRunningInInForegroundService = false
         changingConfiguration = false
         super.onRebind(intent)
     }
@@ -179,6 +181,7 @@ class BleUpdatesService : Service() {
     override fun onUnbind(intent: Intent): Boolean {
         insertLogs("onUnbind", TAG)
         if (!changingConfiguration) {
+            isRunningInInForegroundService = true
             startForeground(NOTIFICATION_ID, getNotification())
         }
         return true // Ensures onRebind() is called when a client re-binds.
@@ -193,6 +196,7 @@ class BleUpdatesService : Service() {
 
 
     override fun onDestroy() {
+        isRunningInInForegroundService = false
         unregisterReceiver(tickReceiver)
         unregisterReceiver(bluetoothReceiver)
         insertLogs("onDestroy", TAG)
@@ -206,8 +210,7 @@ class BleUpdatesService : Service() {
             locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER)
                 ?: false
         if (hasPermissions() && gpsEnabled) {
-            if (!serviceIsStarted(applicationContext))
-                startService(Intent(applicationContext, BleUpdatesService::class.java))
+            startService(Intent(applicationContext, BleUpdatesService::class.java))
             try {
                 deviceManager.startSearchDevices(::onBleDeviceFound)
                 initScanWorkTimer()
@@ -218,8 +221,7 @@ class BleUpdatesService : Service() {
     }
 
     fun startAdvertising() {
-        if (!serviceIsStarted(applicationContext))
-            startService(Intent(applicationContext, BleUpdatesService::class.java))
+        startService(Intent(applicationContext, BleUpdatesService::class.java))
         try {
             deviceManager.startAdvertising()
         } catch (e: Exception) {
@@ -297,31 +299,9 @@ class BleUpdatesService : Service() {
         val service: BleUpdatesService get() = this@BleUpdatesService
     }
 
-    @Suppress("DEPRECATION")
-    private fun serviceIsStarted(context: Context): Boolean {
-        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
-            if (javaClass.name == service.service.className) {
-                if (service.started) {
-                    return true
-                }
-            }
-        }
-        return false
-    }
 
-    @Suppress("DEPRECATION")
-    fun serviceIsRunningInForeground(context: Context): Boolean {
-        val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
-            if (javaClass.name == service.service.className) {
-                if (service.foreground) {
-                    return true
-                }
-            }
-        }
-        return false
+    fun serviceIsRunningInForeground(): Boolean {
+        return isRunningInInForegroundService
     }
-
 
 }

@@ -213,7 +213,7 @@ class DeviceManager(private val context: Context) {
      * Close connection with earlier connected device
      */
     fun closeConnection() {
-        insertLogs("Close Connection bluetoothGatt?.device?.address", SCAN_TAG)
+        insertLogs("Close Connection ${bluetoothGatt?.device?.address}", SCAN_TAG)
         bluetoothGatt?.close()
         bluetoothGatt = null
     }
