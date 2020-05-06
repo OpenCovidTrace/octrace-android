@@ -3,4 +3,7 @@
     <dimen name="margin_regular">16dp</dimen>
 
     <dimen name="input_height">44dp</dimen>
+    <!-- Bottom sheet-->
+    <dimen name="sheet_rounded_corner">16dp</dimen>
+    <dimen name="button_rounded_corner">10dp</dimen>
 </resources>

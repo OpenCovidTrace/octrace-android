@@ -6,7 +6,7 @@ object DataManager {
 
     const val maxDays = 14
 
-    fun expirationDate(): Calendar = Calendar.getInstance().apply { add(Calendar.DATE, -maxDays) }
+    private fun expirationDate(): Calendar = Calendar.getInstance().apply { add(Calendar.DATE, -maxDays) }
 
     fun expirationTimestamp() = expirationDate().timeInMillis
 

@@ -10,6 +10,7 @@ import android.content.IntentSender.SendIntentException
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.widget.Toast
@@ -24,15 +25,29 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import org.opencovidtrace.octrace.OnboardingActivity.Extra.STAGE_EXTRA
+import org.opencovidtrace.octrace.data.ContactRequest
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.data.Enums.*
+import org.opencovidtrace.octrace.data.QrContact
 import org.opencovidtrace.octrace.di.BluetoothManagerProvider
+import org.opencovidtrace.octrace.di.api.ContactsApiClientProvider
 import org.opencovidtrace.octrace.ext.access.withPermissions
+import org.opencovidtrace.octrace.ext.ifAllNotNull
+import org.opencovidtrace.octrace.ext.ui.showError
+import org.opencovidtrace.octrace.ext.ui.showInfo
 import org.opencovidtrace.octrace.location.LocationAccessManager
+import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.service.BleUpdatesService
 import org.opencovidtrace.octrace.service.TrackingService
 import org.opencovidtrace.octrace.storage.BtContactsManager
 import org.opencovidtrace.octrace.storage.KeyManager
+import org.opencovidtrace.octrace.storage.QrContactsManager
+import org.opencovidtrace.octrace.utils.CryptoUtil
+import org.opencovidtrace.octrace.utils.CryptoUtil.base64DecodeByteArray
+import org.opencovidtrace.octrace.utils.CryptoUtil.base64EncodedString
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MainActivity : AppCompatActivity() {
 
@@ -49,6 +64,8 @@ class MainActivity : AppCompatActivity() {
     private var bound = false
     private val deviceManager by BluetoothManagerProvider()
     private var needStartBleService = false
+    private var bluetoothAlert: AlertDialog.Builder? = null
+    private val contactsApiClient by ContactsApiClientProvider()
 
     // Monitors the state of the connection to the service.
     private val serviceConnection: ServiceConnection =
@@ -85,6 +102,20 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra(STAGE_EXTRA, OnboardingStage.WELCOME)
 
             startActivity(intent)
+        }
+        handleDeepLink()
+    }
+
+    private fun handleDeepLink() {
+        val data: Uri? = intent.data
+        if (data != null && data.isHierarchical) {
+            val uri = Uri.parse(intent.dataString)
+            val id = uri.getQueryParameter("i")
+            val key = uri.getQueryParameter("k")
+            val token = uri.getQueryParameter("d")
+            val platform = uri.getQueryParameter("p")
+            val tst = uri.getQueryParameter("t")?.toLongOrNull()
+            ifAllNotNull(id, key, token, platform, tst, ::makeContact)
         }
     }
 
@@ -234,16 +265,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showBluetoothDisabledError() {
-        AlertDialog.Builder(this).apply {
-            setTitle(R.string.bluetooth_turn_off)
-            setMessage(R.string.bluetooth_turn_off_description)
-            setCancelable(false)
-            setPositiveButton(R.string.enable) { _, _ ->
-                val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-                startActivityForResult(enableBtIntent, REQUEST_BLUETOOTH)
+        if (bluetoothAlert == null)
+            bluetoothAlert = AlertDialog.Builder(this).apply {
+                setTitle(R.string.bluetooth_turn_off)
+                setMessage(R.string.bluetooth_turn_off_description)
+                setCancelable(false)
+                setPositiveButton(R.string.enable) { _, _ ->
+                    val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+                    startActivityForResult(enableBtIntent, REQUEST_BLUETOOTH)
+                    bluetoothAlert = null
+                }
+                setOnCancelListener { bluetoothAlert = null }
+                show()
             }
-            show()
-        }
     }
 
     private fun showBluetoothNotFoundError() {
@@ -256,5 +290,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun makeContact(rId: String, key: String, token: String, platform: String, tst: Long) {
+        if ((System.currentTimeMillis() - tst) > (60 * 1000)) {
+            // QR contact should be valid for 1 minute only
+            showError(R.string.code_has_expired)
+            return
+        }
+        val location = LocationUpdateManager.getLastLocation()
+        if (location == null) {
+            showError("No location info")
+            return
+        }
 
+
+        val rollingId = CryptoUtil.getRollingId()
+        val secret =
+            CryptoUtil.encodeAES(rollingId, key.base64DecodeByteArray()).base64EncodedString()
+        val contactRequest = ContactRequest(token, platform, secret, tst)
+        contactsApiClient.sendContactRequest(contactRequest)
+            .enqueue(object : Callback<String> {
+
+                override fun onResponse(call: Call<String>, response: Response<String>) {
+                    val contact = QrContact(rId, location.latitude, location.longitude, tst)
+
+                    QrContactsManager.addContact(contact)
+                    showInfo(R.string.recorded_contact)
+                }
+
+                override fun onFailure(call: Call<String>, t: Throwable) {
+                    t.message?.let { showError(it) }
+
+                }
+
+            })
+    }
 }

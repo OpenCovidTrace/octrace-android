@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "623310393501",
+    "firebase_url": "https://opencovidtrace.firebaseio.com",
+    "project_id": "opencovidtrace",
+    "storage_bucket": "opencovidtrace.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:623310393501:android:124714481559897466c474",
+        "android_client_info": {
+          "package_name": "org.opencovidtrace.octrace.dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "623310393501-09e79airqvde0st7513jkhvhvblip1fe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKLcaLmD6kyMNB3AsiVyp5W0qyciQ3z0I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "623310393501-09e79airqvde0st7513jkhvhvblip1fe.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "623310393501-4dfh20q3btrh82dp1jdf7hdvt3qcfrur.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.opencovidtrace.octrace.dev"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

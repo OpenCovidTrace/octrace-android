@@ -3,17 +3,50 @@
 
     <!--Errors-->
     <string name="bluetooth_turn_off">Bluetooth is powered off</string>
-    <string name="bluetooth_turn_off_description">To start turn on bluetooth in settings</string>
+    <string name="bluetooth_turn_off_description">Please turn on Bluetooth to enable automatic contact tracing!</string>
     <string name="bluetooth_do_not_support">Your smartphone does not support Bluetooth</string>
     <string name="bluetooth_do_not_support_description">Therefore, we will not be able to connect the device</string>
     <!--Other-->
     <string name="enable">Enable</string>
+    <string name="ok">OK</string>
+    <string name="error">Error</string>
+    <string name="cancel">Cancel</string>
     <string name="done">Done</string>
+    <string name="close">Close</string>
+    <string name="clear">Clear</string>
+    <string name="logs">Logs</string>
+    <string name="bluetooth_off">Bluetooth off</string>
+    <string name="turning_bluetooth_off">Turning Bluetooth off…</string>
+    <string name="bluetooth_on">Bluetooth on</string>
+    <string name="turning_bluetooth_on">Turning Bluetooth on…</string>
+    <string name="bluetooth_unknown_state">Bluetooth unknown state</string>
     <!-- MainActivity -->
     <string name="title_newsroom">Newsroom</string>
     <string name="title_map">Map</string>
     <string name="title_my_status">My status</string>
     <string name="location_disabled">Location is disabled :(</string>
+    <!-- MapFragment -->
+    <string name="record_contact">Record contact</string>
+    <string name="recorded_contact">The contact has been recorded!</string>
+    <string name="qr_info">Please have the other person scan this QR code.</string>
+    <string name="failed_get_token">Failed to get notifications token.</string>
+    <string name="failed_generate_qr">Failed to generate QR.</string>
+    <string name="code_has_expired">Contact code has expired, please try again.</string>
+
+    <string name="clear_logs">Are you sure you want to clear all logs?</string>
+    <!-- StatusFragment -->
+    <string name="current_status">Current status: %s</string>
+    <string name="i_got_symptoms">I got symptoms :(</string>
+    <string name="status_healthy">Healthy</string>
+    <string name="status_symptoms">Symptoms</string>
+    <string name="whats_next">What\'s next?</string>
+
+    <string name="please_confirm">Please confirm</string>
+    <string name="change_status_info_1">You are about to anonymously self-report having symptoms of Covid-19 (Coronavirus). Your tracking
+                records will be uploaded to the server for processing.\nNOTE: This procedure is anonymous, your privacy
+                is kept at all times.</string>
+    <string name="tatus_sick_info"> We are planning to introduce new statuses: covid-confirmed and covid-recovered (immune) in the nearest
+                future.</string>
 
     <!-- OnboardingActivity -->
     <string name="onboarding_welcome_title">Welcome!</string>
