@@ -15,13 +15,12 @@ data class ConnectedDevice(var device: BluetoothDevice, var receiveInfo: String?
 
 @Entity(tableName = "log_table")
 data class LogTableValue(
-    val event: String? = null,
-    val additionalInfo: String? = null,
-    val tag: String? = null,
+    val tag: String,
+    val text: String,
     val time: Calendar = Calendar.getInstance(),
     @PrimaryKey(autoGenerate = true) var id: Int? = null
 ) {
-    fun getLogValue() = "$event: $additionalInfo"
+    fun getLogValue() = text
 
     fun getTimeWithTag() = time.dateFullFormat() + if (tag.isNullOrEmpty()) "" else " - <$tag>"
 }

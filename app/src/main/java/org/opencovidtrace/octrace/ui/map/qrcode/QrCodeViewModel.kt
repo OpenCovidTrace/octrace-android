@@ -23,7 +23,7 @@ class QrCodeViewModel : ViewModel() {
         val url: String =
             Uri.parse(ContactsApiClientProvider.CONTACTS_ENDPOINT + "app/contact")
                 .buildUpon()
-                .appendQueryParameter("p", "android")
+                .appendQueryParameter("p", "a")
                 .appendQueryParameter("d", token)
                 .appendQueryParameter("i", rollingId)
                 .appendQueryParameter("k", key)

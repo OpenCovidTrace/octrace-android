@@ -115,10 +115,7 @@ class MainActivity : AppCompatActivity() {
             val token = uri.getQueryParameter("d")
             val platform = uri.getQueryParameter("p")
             val tst = uri.getQueryParameter("t")?.toLongOrNull()
-            ifAllNotNull(id, key, token, platform, tst) { i, k, d, p, t ->
-                makeContact(i, k, d, p, t)
-            }
-
+            ifAllNotNull(id, key, token, platform, tst, this@MainActivity::makeContact)
         }
     }
 

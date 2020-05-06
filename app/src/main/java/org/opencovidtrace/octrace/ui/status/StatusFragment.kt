@@ -25,7 +25,7 @@ class StatusFragment : Fragment() {
         statusViewModel =
             ViewModelProvider(this).get(StatusViewModel::class.java)
         val root = inflater.inflate(R.layout.fragment_status, container, false)
-      
+
         return root
     }
 
@@ -35,12 +35,11 @@ class StatusFragment : Fragment() {
         refreshStatus()
     }
 
-    private fun changeStatus(){
-        if (UserStatusManager.sick()){
+    private fun changeStatus() {
+        if (UserStatusManager.sick()) {
             showInfo(R.string.tatus_sick_info)
-        }
-        else{
-            confirm(R.string.change_status_info_1){
+        } else {
+            confirm(R.string.change_status_info_1) {
                 updateUserStatus(UserStatusManager.symptoms)
             }
         }
@@ -56,12 +55,14 @@ class StatusFragment : Fragment() {
 
     private fun refreshStatus() {
         if (UserStatusManager.sick()) {
-            currentStatusTextView.text = getString(R.string.current_status,getString(R.string.status_symptoms))
+            currentStatusTextView.text =
+                getString(R.string.current_status, getString(R.string.status_symptoms))
 
             changeStatusButton.setText(R.string.whats_next)
             changeStatusButton.setBackgroundResource(R.drawable.bg_rounded_green_button)
         } else {
-            currentStatusTextView.text = getString(R.string.current_status,getString(R.string.status_healthy))
+            currentStatusTextView.text =
+                getString(R.string.current_status, getString(R.string.status_healthy))
 
             changeStatusButton.setText(R.string.i_got_symptoms)
             changeStatusButton.setBackgroundResource(R.drawable.bg_rounded_red_button)

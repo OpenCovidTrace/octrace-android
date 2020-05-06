@@ -9,7 +9,7 @@ object UserStatusManager : PreferencesHolder("userStatus") {
     private const val USER_STATUS = "userStatus"
 
     private fun getStatus(): String {
-        return getString( USER_STATUS) ?: healthy
+        return getString(USER_STATUS) ?: healthy
     }
 
     fun setStatus(value: String) {
