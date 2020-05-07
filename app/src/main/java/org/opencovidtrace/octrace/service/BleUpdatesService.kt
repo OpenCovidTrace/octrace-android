@@ -18,7 +18,6 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import org.opencovidtrace.octrace.MainActivity
 import org.opencovidtrace.octrace.R
-import org.opencovidtrace.octrace.bluetooth.DeviceManager
 import org.opencovidtrace.octrace.data.ConnectedDevice
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.di.BluetoothManagerProvider
@@ -47,7 +46,7 @@ class BleUpdatesService : Service() {
     private var scanPauseTimer: Timer? = null
 
     /* Collection of devices found */
-    private val foundedDevices = mutableSetOf<ConnectedDevice>()
+    private val foundDevices = mutableSetOf<ConnectedDevice>()
     private val deviceManager by BluetoothManagerProvider()
 
     private var bluetoothState: Int = -1
@@ -93,21 +92,6 @@ class BleUpdatesService : Service() {
                 createNotificationChannel(channel)
             }
         }
-        deviceManager.setDeviceStatusListener(object : DeviceManager.DeviceStatusListener {
-            override fun onDataReceived(device: BluetoothDevice, bytes: ByteArray) {
-                val bytesString = bytes.contentToString()
-                foundedDevices.firstOrNull { it.device.address == device.address }?.let {
-                    it.receiveInfo = bytesString
-                }
-            }
-
-            override fun onServiceNotFound(device: BluetoothDevice) {
-                foundedDevices.firstOrNull { it.device.address == device.address }?.let {
-                    it.receiveInfo = "service not found"
-                }
-            }
-
-        })
         bluetoothState =
             if (deviceManager.checkBluetooth() == Enums.ENABLED) BluetoothAdapter.STATE_ON
             else BluetoothAdapter.STATE_OFF
@@ -230,17 +214,20 @@ class BleUpdatesService : Service() {
     }
 
     private fun onBleDeviceFound(result: ScanResult) {
-        if (foundedDevices.firstOrNull { it.device.address == result.device.address } == null) {
+        val device = ConnectedDevice(result.device, result.rssi)
+        if (foundDevices.firstOrNull { it == device } == null) {
             if (deviceManager.connectDevice(result, ::onBleDeviceConnect)) {
-                foundedDevices.add(ConnectedDevice(result.device))
+                foundDevices.add(device)
             }
+        } else {
+            insertLogs("Not connecting to ${result.device.address}, duplicate RSSI value.", TAG)
         }
     }
 
     private fun onBleDeviceConnect(device: BluetoothDevice, result: Boolean) {
         if (!result)
-            foundedDevices.firstOrNull { it.device.address == device.address }?.let {
-                foundedDevices.remove(it)
+            foundDevices.firstOrNull { it.device.address == device.address }?.let {
+                foundDevices.remove(it)
             }
     }
 
