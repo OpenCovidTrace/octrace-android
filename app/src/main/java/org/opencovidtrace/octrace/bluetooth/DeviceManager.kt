@@ -248,13 +248,18 @@ class DeviceManager(private val context: Context) {
         if (advertisingActive)
             return true
         if (!bluetoothAdapter.isMultipleAdvertisementSupported) {
-            insertLogs("Advertisement not supported", ADV_TAG)
+            insertLogs("Multiple advertisement is not supported", ADV_TAG)
+        }
+        if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            insertLogs("Bluetooth LE is not supported", ADV_TAG)
             return false
         }
-
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothManager.adapter.bluetoothLeAdvertiser
-
+        if (bluetoothLeAdvertiser == null) {
+            insertLogs("Bluetooth LE advertiser is unavailable", ADV_TAG)
+            return false
+        }
         bluetoothLeAdvertiser?.let {
             val settings = AdvertiseSettings.Builder()
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
