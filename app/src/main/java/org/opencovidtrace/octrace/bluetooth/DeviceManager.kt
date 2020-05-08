@@ -20,7 +20,6 @@ import java.util.*
 class DeviceManager(private val context: Context) {
 
     companion object {
-        private val TAG = DeviceManager::class.java.simpleName
         val SERVICE_UUID: UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9f")
         val MAIN_CHARACTERISTIC_UUID: UUID = UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e")
     }
@@ -38,15 +37,6 @@ class DeviceManager(private val context: Context) {
     private var advertisingActive = false
 
     private var deviceStatusListener: DeviceStatusListener? = null
-
-    /**
-     * Add listener to receive scanned data
-     *
-     * @see DeviceStatusListener
-     */
-    fun setDeviceStatusListener(listener: DeviceStatusListener?) {
-        this.deviceStatusListener = listener
-    }
 
     /**
      * Check is Bluetooth LE is available and is it turned on
@@ -281,7 +271,7 @@ class DeviceManager(private val context: Context) {
                 .build()
 
             it.startAdvertising(settings, data, advertiseCallback)
-            insertLogs("Start Advertising ${SERVICE_UUID.toString()}", ADV_TAG)
+            insertLogs("Start Advertising $SERVICE_UUID", ADV_TAG)
             advertisingActive = true
             return true
         } ?: return false

@@ -11,7 +11,7 @@ import java.util.*
 object CryptoUtil {
 
     private const val daySeconds = 60 * 60 * 24
-    private const val BYTES = java.lang.Long.SIZE / java.lang.Byte.SIZE
+    private const val BYTES = 4
     private val hkdf = HKDF.fromHmacSha256()
 
     private val random = SecureRandom()

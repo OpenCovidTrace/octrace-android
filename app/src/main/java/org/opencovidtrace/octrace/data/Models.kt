@@ -11,7 +11,7 @@ import java.util.*
 const val ADV_TAG = "ADV"
 const val SCAN_TAG = "SCAN"
 
-data class ConnectedDevice(var device: BluetoothDevice, var receiveInfo: String? = null)
+data class ConnectedDevice(val device: BluetoothDevice, val rssi: Int)
 
 @Entity(tableName = "log_table")
 data class LogTableValue(
@@ -22,7 +22,7 @@ data class LogTableValue(
 ) {
     fun getLogValue() = text
 
-    fun getTimeWithTag() = time.dateFullFormat() + if (tag.isNullOrEmpty()) "" else " - <$tag>"
+    fun getTimeWithTag() = time.dateFullFormat() + " - <$tag>"
 }
 
 
