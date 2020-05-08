@@ -11,19 +11,22 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationSettingsRequest
-import org.opencovidtrace.octrace.location.LocationAccessManager
-import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.MainActivity
 import org.opencovidtrace.octrace.R
+import org.opencovidtrace.octrace.location.LocationAccessManager
+import org.opencovidtrace.octrace.location.LocationUpdateManager
 
 class TrackingService : Service() {
 
     companion object {
         const val BACKGROUND_CHANNEL_ID = "BACKGROUND_CHANNEL_ID"
+        const val EXTRA_LOCATION = "eLocation"
+        const val ACTION_BROADCAST: String = "broadcastLocation"
 
         const val NOTIFICATION_TRACKING_SERVICE_ID = 1
 
@@ -133,7 +136,9 @@ class TrackingService : Service() {
     }
 
     private fun sendTrackingLocation(location: Location) {
-        // TODO implement
+        val intent = Intent(ACTION_BROADCAST)
+        intent.putExtra(EXTRA_LOCATION, location)
+        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
     }
 
 }

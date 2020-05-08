@@ -2,6 +2,7 @@ package org.opencovidtrace.octrace.storage
 
 import android.location.Location
 import com.google.gson.Gson
+import org.opencovidtrace.octrace.data.LocationIndex
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -33,6 +34,20 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
             const val maxLatValue = 90.0
             const val maxLngValue = 180.0
             private const val minDiff = 0.1 // ~ 10km
+
+            fun fetchLocationBorderByIndex(locationIndex: LocationIndex): LocationBorder {
+                val centerLat = locationIndex.latIdx.toDouble() / LocationIndex.precision
+                val centerLng = locationIndex.lngIdx.toDouble() / LocationIndex.precision
+                val locationBorder = LocationBorder(
+                    minLat = centerLat - LocationIndex.diff,
+                    minLng = centerLng - LocationIndex.diff,
+                    maxLat = centerLat + LocationIndex.diff,
+                    maxLng = centerLng + LocationIndex.diff
+                )
+                locationBorder.adjustLatLimits()
+                locationBorder.adjustLngLimits()
+                return locationBorder
+            }
         }
 
 
@@ -42,6 +57,7 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
             location.latitude,
             location.longitude
         )
+
 
         fun update(location: Location) {
             minLat = min(minLat, location.latitude)
@@ -103,6 +119,5 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
             return leftLimit + Random.nextDouble() * (rightLimit - leftLimit)
         }
     }
-
 
 }

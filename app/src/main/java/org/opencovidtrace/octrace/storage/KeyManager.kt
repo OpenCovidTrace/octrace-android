@@ -1,13 +1,11 @@
 package org.opencovidtrace.octrace.storage
 
-import com.google.gson.Gson
 import org.opencovidtrace.octrace.utils.CryptoUtil
 
 
 object KeyManager : PreferencesHolder("key") {
 
     private const val TRACING_KEY = "tracingKey"
-    private const val DAILY_KEYS = "dailyKeys"
 
     /// Used in AG spec v1 and as onboarding indicator
 
@@ -26,21 +24,5 @@ object KeyManager : PreferencesHolder("key") {
     fun hasKey(): Boolean {
         return getKey() != null
     }
-
-    /// Used in AG spec v1.1
-    ////////////////////
-
-    fun getDailyKeys(): HashMap<Int, ByteArray> {
-        val storedHashMapString = getString(DAILY_KEYS)
-        (Gson().fromJson(storedHashMapString) as? HashMap<Int, ByteArray>)?.let {
-            return it
-        }?: kotlin.run { return hashMapOf() }
-    }
-
-    fun setDailyKeys(newValue: HashMap<Int, ByteArray>) {
-        val hashMapString = Gson().toJson(newValue)
-        setString(DAILY_KEYS, hashMapString)
-    }
-
 
 }

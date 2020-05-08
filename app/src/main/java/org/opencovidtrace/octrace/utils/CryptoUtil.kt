@@ -4,6 +4,7 @@ import android.util.Base64
 import at.favre.lib.crypto.HKDF
 import org.opencovidtrace.octrace.storage.DataManager
 import org.opencovidtrace.octrace.storage.KeyManager
+import org.opencovidtrace.octrace.storage.KeysManager
 import java.nio.ByteBuffer
 import java.security.SecureRandom
 import java.util.*
@@ -59,6 +60,28 @@ object CryptoUtil {
 
 
     private fun getTimestamp() = System.currentTimeMillis() / 1000
+
+    fun getDailyKeys(dayNumber: Int) : Pair<ByteArray, ByteArray> {
+        val dailyKeys = KeysManager.getDailyKeys()
+        val metaKeys = KeysManager.getMetaKeys()
+
+        dailyKeys[dayNumber]?.let {dailyKey->
+            metaKeys[dayNumber]?.let {metaKey->
+                return Pair(dailyKey, metaKey)
+            }
+        }
+
+        val dailyKey = generateKey(32)
+        val metaKey = generateKey(32)
+
+        dailyKeys[dayNumber] = dailyKey
+        metaKeys[dayNumber] = metaKey
+
+        KeysManager.setDailyKeys(dailyKeys)
+        KeysManager.setMetaKeys(metaKeys)
+
+        return Pair(dailyKey, metaKey)
+    }
 
 
     interface CryptoSpec {
@@ -141,13 +164,13 @@ object CryptoUtil {
         private val rpiPrefix = "EN-RPI".toByteArray()
 
         override fun getDailyKey(dayNumber: Int): ByteArray {
-            val dailyKeys = KeyManager.getDailyKeys()
+            val dailyKeys = KeysManager.getDailyKeys()
             dailyKeys[dayNumber]?.let { return it }
 
             val dailyKey = generateKey(16)
             dailyKeys[dayNumber] = dailyKey
 
-            KeyManager.setDailyKeys(dailyKeys)
+            KeysManager.setDailyKeys(dailyKeys)
 
             return dailyKey
         }
@@ -170,7 +193,7 @@ object CryptoUtil {
         override fun getLatestDailyKeys(): List<ByteArray> {
             val lastDayNumber = currentDayNumber() - DataManager.maxDays
 
-            return KeyManager.getDailyKeys().filterKeys { it > lastDayNumber }.values.toList()
+            return KeysManager.getDailyKeys().filterKeys { it > lastDayNumber }.values.toList()
         }
 
         private fun getRollingId(dailyKey: ByteArray, enIntervalNumber: Int): ByteArray {
