@@ -231,7 +231,7 @@ class BleUpdatesService : Service() {
             }
     }
 
-    fun stopBleService() {
+    fun stopBleService(needStopSelf: Boolean = false) {
         deviceManager.stopSearchDevices()
         deviceManager.closeConnection()
         deviceManager.stopServer()
@@ -240,6 +240,8 @@ class BleUpdatesService : Service() {
         scanWorkTimer = null
         scanPauseTimer?.cancel()
         scanPauseTimer = null
+        if (needStopSelf)
+            stopSelf()
     }
 
 
