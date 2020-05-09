@@ -2,6 +2,8 @@ package org.opencovidtrace.octrace.storage
 
 import android.location.Location
 import com.google.gson.Gson
+import org.opencovidtrace.octrace.data.LocationIndex
+import org.opencovidtrace.octrace.utils.CryptoUtil
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -22,6 +24,36 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
         KeyManager.setString(LOCATION_BORDERS, hashMapString)
     }
 
+    fun removeOldLocationBorders() {
+        val lastDay = CryptoUtil.currentDayNumber() - DataManager.maxDays
+
+        val oldBorders = getLocationBorders()
+
+        val newBorders: HashMap<Int, LocationBorder> = hashMapOf()
+
+        oldBorders.keys.forEach { dayNumber ->
+                if (dayNumber > lastDay) {
+                    oldBorders[dayNumber]?.let {  newBorders[dayNumber] = it }
+                }
+        }
+
+        setLocationBorders(newBorders)
+    }
+
+    fun updateLocationBorders(location: Location) {
+        val newBorders = getLocationBorders()
+
+        val currentDayNumber = CryptoUtil.currentDayNumber()
+
+        newBorders[currentDayNumber]?.let {currentBorder->
+            currentBorder.update(location)
+        }?: kotlin.run {
+            newBorders[currentDayNumber] = LocationBorder(location)
+        }
+
+        setLocationBorders(newBorders)
+    }
+
 
     data class LocationBorder(
         var minLat: Double,
@@ -33,6 +65,20 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
             const val maxLatValue = 90.0
             const val maxLngValue = 180.0
             private const val minDiff = 0.1 // ~ 10km
+
+            fun fetchLocationBorderByIndex(locationIndex: LocationIndex): LocationBorder {
+                val centerLat = locationIndex.latIdx.toDouble() / LocationIndex.precision
+                val centerLng = locationIndex.lngIdx.toDouble() / LocationIndex.precision
+                val locationBorder = LocationBorder(
+                    minLat = centerLat - LocationIndex.diff,
+                    minLng = centerLng - LocationIndex.diff,
+                    maxLat = centerLat + LocationIndex.diff,
+                    maxLng = centerLng + LocationIndex.diff
+                )
+                locationBorder.adjustLatLimits()
+                locationBorder.adjustLngLimits()
+                return locationBorder
+            }
         }
 
 
@@ -42,6 +88,7 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
             location.latitude,
             location.longitude
         )
+
 
         fun update(location: Location) {
             minLat = min(minLat, location.latitude)
@@ -103,6 +150,5 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
             return leftLimit + Random.nextDouble() * (rightLimit - leftLimit)
         }
     }
-
 
 }

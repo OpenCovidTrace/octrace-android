@@ -6,7 +6,9 @@ import androidx.room.*
 import com.google.android.gms.maps.model.LatLng
 import org.opencovidtrace.octrace.ext.text.dateFullFormat
 import org.opencovidtrace.octrace.storage.LocationBordersManager
+import org.opencovidtrace.octrace.utils.CryptoUtil
 import java.util.*
+import kotlin.math.roundToInt
 
 const val ADV_TAG = "ADV"
 const val SCAN_TAG = "SCAN"
@@ -88,12 +90,50 @@ data class ContactRequest(
     val tst: Long
 )
 
-data class QrContact(val id: String, val lat: Double, val lng: Double, val tst: Long){
+data class QrContact(val id: String, val lat: Double, val lng: Double, val tst: Long) {
 
     fun coordinate(): LatLng = LatLng(lat, lng)
 
-    fun date() :Calendar = Calendar.getInstance().apply { timeInMillis=tst }
+    fun date(): Calendar = Calendar.getInstance().apply { timeInMillis = tst }
 
 }
 
-data class QrContactHealth(val contact: QrContact, var infected: Boolean=false)
+data class QrContactHealth(val contact: QrContact, var infected: Boolean = false)
+
+
+data class TrackingPoint(val lat: Double, val lng: Double, val tst: Long) {
+
+    constructor(location: Location) : this(
+        location.latitude,
+        location.longitude,
+        System.currentTimeMillis()
+    )
+
+    constructor(latLng: LatLng) : this(
+        latLng.latitude,
+        latLng.longitude,
+        System.currentTimeMillis()
+    )
+
+    fun coordinate(): LatLng = LatLng(lat, lng)
+
+    fun dayNumber() = CryptoUtil.getDayNumber(tst)
+
+}
+
+data class Track(var points: MutableList<TrackingPoint>, val day: Int, val key: String)
+
+data class TracksData(var tracks: List<Track>)
+
+data class LocationIndex(val latIdx : Int, val lngIdx: Int){
+
+   companion object{
+       const val diff = 0.25 // ~ 25km
+       const val precision = 10.0 // ~ 10km square side per index
+   }
+
+    constructor(location: Location) : this(
+        latIdx= (location.latitude * precision).roundToInt(),
+        lngIdx= (location.longitude * precision).roundToInt()
+    )
+}

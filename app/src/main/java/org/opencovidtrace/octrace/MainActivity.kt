@@ -121,7 +121,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
         if (KeyManager.hasKey()) {
             requestEnableTracking()
         }
@@ -145,6 +144,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        bleUpdatesService?.stopBleService(true)
         stopTrackingService()
     }
 
@@ -324,4 +324,5 @@ class MainActivity : AppCompatActivity() {
 
             })
     }
+
 }

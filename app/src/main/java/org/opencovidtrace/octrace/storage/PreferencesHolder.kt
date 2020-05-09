@@ -31,9 +31,22 @@ open class PreferencesHolder(private val preferencesName: String) {
         withEditor { editor -> editor.putInt(key, value) }
     }
 
+    fun getBoolean(key: String): Boolean {
+        return preferences.getBoolean(key, false)
+    }
+
     fun setBoolean(key: String, value: Boolean) {
         withEditor { editor -> editor.putBoolean(key, value) }
     }
+
+    fun getLong(key: String): Long {
+        return preferences.getLong(key, 0)
+    }
+
+    fun setLong(key: String, value: Long) {
+        withEditor { editor -> editor.putLong(key, value) }
+    }
+
 
     fun remove(key: String) {
         withEditor { editor -> editor.remove(key) }

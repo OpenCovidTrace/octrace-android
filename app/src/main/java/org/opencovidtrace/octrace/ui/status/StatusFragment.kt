@@ -11,6 +11,7 @@ import org.opencovidtrace.octrace.R
 import org.opencovidtrace.octrace.ext.ui.confirm
 import org.opencovidtrace.octrace.ext.ui.showInfo
 import org.opencovidtrace.octrace.storage.KeysManager
+import org.opencovidtrace.octrace.storage.TracksManager
 import org.opencovidtrace.octrace.storage.UserStatusManager
 
 class StatusFragment : Fragment() {
@@ -48,6 +49,7 @@ class StatusFragment : Fragment() {
     private fun updateUserStatus(status: String) {
         UserStatusManager.setStatus(status)
 
+        TracksManager.uploadNewTracks()
         KeysManager.uploadNewKeys()
 
         refreshStatus()
