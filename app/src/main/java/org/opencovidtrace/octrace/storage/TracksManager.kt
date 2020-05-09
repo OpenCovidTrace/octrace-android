@@ -72,6 +72,7 @@ object TracksManager : PreferencesHolder("tracks") {
                 tracksByDay[dayNumber] = Track(arrayListOf(point), dayNumber, secretKey)
             }
         }
+
         val tracksData = TracksData(tracks = tracksByDay.values.toList())
 
         apiClient.sendTracks(tracksData)

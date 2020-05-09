@@ -1,5 +1,6 @@
 package org.opencovidtrace.octrace.ui.map
 
+import android.location.Location
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,14 +15,24 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.android.synthetic.main.fragment_map.*
 import org.opencovidtrace.octrace.R
+import org.opencovidtrace.octrace.data.LocationIndex
+import org.opencovidtrace.octrace.data.TracksData
+import org.opencovidtrace.octrace.di.api.ApiClientProvider
 import org.opencovidtrace.octrace.location.LocationUpdateManager
+import org.opencovidtrace.octrace.storage.LocationBordersManager
+import org.opencovidtrace.octrace.storage.LocationIndexManager
+import org.opencovidtrace.octrace.storage.TracksManager
 import org.opencovidtrace.octrace.ui.map.logs.LogsFragment
 import org.opencovidtrace.octrace.ui.map.qrcode.QrCodeFragment
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MapFragment : Fragment(), OnMapReadyCallback {
 
     private lateinit var mapViewModel: MapViewModel
     private lateinit var mapView: MapView
+    private val apiClient by ApiClientProvider()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,15 +59,19 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     override fun onMapReady(map: GoogleMap?) {
         LocationUpdateManager.registerCallback { location ->
-            map?.moveCamera(
-                CameraUpdateFactory.newCameraPosition(
-                    CameraPosition.Builder()
-                        .target(LatLng(location.latitude, location.longitude))
-                        .zoom(14f)
-                        .build()
+            loadTracks(location)
+            activity?.runOnUiThread {
+                map?.moveCamera(
+                    CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.Builder()
+                            .target(LatLng(location.latitude, location.longitude))
+                            .zoom(14f)
+                            .build()
+                    )
                 )
-            )
-            map?.isMyLocationEnabled = true
+                map?.isMyLocationEnabled = true
+
+            }
         }
     }
 
@@ -110,5 +125,29 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         super.onDestroy()
 
         mapView.onDestroy()
+    }
+
+    private fun loadTracks(location: Location) {
+        val index = LocationIndex(location)
+        val lastUpdateTimestamp = LocationIndexManager.getKeysIndex()[index] ?: 0
+        val border = LocationBordersManager.LocationBorder.fetchLocationBorderByIndex(index)
+
+        apiClient.fetchTracks(
+            lastUpdateTimestamp,
+            border.minLat,
+            border.maxLat,
+            border.minLng,
+            border.maxLng
+        ).enqueue(object : Callback<TracksData> {
+
+            override fun onResponse(call: Call<TracksData>, response: Response<TracksData>) {
+                response.body()?.tracks?.let { TracksManager.addTracks(it) }
+            }
+
+            override fun onFailure(call: Call<TracksData>, t: Throwable) {
+                println("ERROR: ${t.message}")
+            }
+
+        })
     }
 }

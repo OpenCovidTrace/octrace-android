@@ -3,10 +3,12 @@ package org.opencovidtrace.octrace
 import android.Manifest.permission
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
-import android.content.*
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
 import android.content.IntentSender.SendIntentException
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.location.Location
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
@@ -16,7 +18,6 @@ import android.widget.Toast.LENGTH_LONG
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.gms.common.api.ResolvableApiException
@@ -24,10 +25,11 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import org.opencovidtrace.octrace.OnboardingActivity.Extra.STAGE_EXTRA
-import org.opencovidtrace.octrace.data.*
+import org.opencovidtrace.octrace.data.ContactRequest
+import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.data.Enums.*
+import org.opencovidtrace.octrace.data.QrContact
 import org.opencovidtrace.octrace.di.BluetoothManagerProvider
-import org.opencovidtrace.octrace.di.api.ApiClientProvider
 import org.opencovidtrace.octrace.di.api.ContactsApiClientProvider
 import org.opencovidtrace.octrace.ext.access.withPermissions
 import org.opencovidtrace.octrace.ext.ifAllNotNull
@@ -37,9 +39,9 @@ import org.opencovidtrace.octrace.location.LocationAccessManager
 import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.service.BleUpdatesService
 import org.opencovidtrace.octrace.service.TrackingService
-import org.opencovidtrace.octrace.service.TrackingService.Companion.ACTION_BROADCAST
-import org.opencovidtrace.octrace.service.TrackingService.Companion.EXTRA_LOCATION
-import org.opencovidtrace.octrace.storage.*
+import org.opencovidtrace.octrace.storage.BtContactsManager
+import org.opencovidtrace.octrace.storage.KeyManager
+import org.opencovidtrace.octrace.storage.QrContactsManager
 import org.opencovidtrace.octrace.utils.CryptoUtil
 import org.opencovidtrace.octrace.utils.CryptoUtil.base64DecodeByteArray
 import org.opencovidtrace.octrace.utils.CryptoUtil.base64EncodedString
@@ -64,10 +66,6 @@ class MainActivity : AppCompatActivity() {
     private var needStartBleService = false
     private var bluetoothAlert: AlertDialog.Builder? = null
     private val contactsApiClient by ContactsApiClientProvider()
-    private val apiClient by ApiClientProvider()
-
-    // The BroadcastReceiver used to listen from broadcasts from the service.
-    private lateinit var locationReceiver: LocationReceiver
 
     // Monitors the state of the connection to the service.
     private val serviceConnection: ServiceConnection =
@@ -88,7 +86,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        locationReceiver = LocationReceiver()
         setContentView(R.layout.activity_main)
         val navView: BottomNavigationView = findViewById(R.id.nav_view)
 
@@ -124,8 +121,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        LocalBroadcastManager.getInstance(this)
-            .registerReceiver(locationReceiver, IntentFilter(ACTION_BROADCAST))
         if (KeyManager.hasKey()) {
             requestEnableTracking()
         }
@@ -148,7 +143,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(locationReceiver)
         super.onDestroy()
         stopTrackingService()
     }
@@ -330,37 +324,4 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
-    private fun loadTracks(location: Location) {
-        val index = LocationIndex(location)
-        val lastUpdateTimestamp = LocationIndexManager.getKeysIndex()[index] ?: 0
-        val border = LocationBordersManager.LocationBorder.fetchLocationBorderByIndex(index)
-
-        apiClient.fetchTracks(
-            lastUpdateTimestamp,
-            border.minLat,
-            border.maxLat,
-            border.minLng,
-            border.maxLng
-
-        ).enqueue(object : Callback<TracksData> {
-
-            override fun onResponse(call: Call<TracksData>, response: Response<TracksData>) {
-                response.body()?.tracks?.let { TracksManager.addTracks(it) }
-            }
-
-            override fun onFailure(call: Call<TracksData>, t: Throwable) {
-                println("ERROR: ${t.message}")
-            }
-
-        })
-    }
-
-    inner class LocationReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val location = intent.getParcelableExtra<Location>(EXTRA_LOCATION)
-            if (location != null) {
-                loadTracks(location)
-            }
-        }
-    }
 }

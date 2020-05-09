@@ -6,6 +6,7 @@ import org.opencovidtrace.octrace.data.TrackingPoint
 object TrackingManager : PreferencesHolder("tracking") {
 
     private const val TRACKING_DATA = "trackingData"
+    const val  trackingIntervalMs = 60 * 1000//60 sec
 
     fun getTrackingData(): List<TrackingPoint> {
         val storedHashMapString = KeyManager.getString(TRACKING_DATA)

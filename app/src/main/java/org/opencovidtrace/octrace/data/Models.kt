@@ -134,6 +134,6 @@ data class LocationIndex(val latIdx : Int, val lngIdx: Int){
 
     constructor(location: Location) : this(
         latIdx= (location.latitude * precision).roundToInt(),
-        lngIdx= (location.latitude * precision).roundToInt()
+        lngIdx= (location.longitude * precision).roundToInt()
     )
 }

@@ -6,12 +6,10 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.location.Location
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -25,8 +23,6 @@ class TrackingService : Service() {
 
     companion object {
         const val BACKGROUND_CHANNEL_ID = "BACKGROUND_CHANNEL_ID"
-        const val EXTRA_LOCATION = "eLocation"
-        const val ACTION_BROADCAST: String = "broadcastLocation"
 
         const val NOTIFICATION_TRACKING_SERVICE_ID = 1
 
@@ -50,7 +46,6 @@ class TrackingService : Service() {
             val location = locationResult.lastLocation
             if (location != null) {
                 LocationUpdateManager.updateLocation(location)
-                sendTrackingLocation(location)
             }
         }
     }
@@ -133,12 +128,6 @@ class TrackingService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
-    }
-
-    private fun sendTrackingLocation(location: Location) {
-        val intent = Intent(ACTION_BROADCAST)
-        intent.putExtra(EXTRA_LOCATION, location)
-        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
     }
 
 }
