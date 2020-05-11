@@ -6,13 +6,11 @@ import java.util.*
 class DatabaseConverters {
 
     @TypeConverter
-    fun fromTimestamp(value: Long?): Calendar? = value?.let { value ->
-        GregorianCalendar().also { calendar ->
-            calendar.timeInMillis = value
-        }
+    fun fromTimestamp(value: Long?): Date? = value?.let {
+        Date(it)
     }
 
     @TypeConverter
-    fun toTimestamp(timestamp: Calendar?): Long? = timestamp?.timeInMillis
+    fun toTimestamp(date: Date?): Long? = date?.time
 
 }

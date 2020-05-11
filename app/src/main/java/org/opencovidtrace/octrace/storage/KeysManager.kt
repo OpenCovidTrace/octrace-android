@@ -1,8 +1,6 @@
 package org.opencovidtrace.octrace.storage
 
 import com.google.gson.Gson
-import org.opencovidtrace.octrace.data.Key
-import org.opencovidtrace.octrace.data.KeysData
 import org.opencovidtrace.octrace.di.api.ApiClientProvider
 import org.opencovidtrace.octrace.utils.CryptoUtil
 import org.opencovidtrace.octrace.utils.CryptoUtil.base64EncodedString
@@ -22,7 +20,7 @@ object KeysManager : PreferencesHolder("keys") {
     private val apiClient by ApiClientProvider()
 
     fun getDailyKeys(): HashMap<Int, ByteArray> {
-        val storedHashMapString = KeyManager.getString(DAILY_KEYS)
+        val storedHashMapString = OnboardingManager.getString(DAILY_KEYS)
         (Gson().fromJson(storedHashMapString) as? HashMap<Int, ByteArray>)?.let {
             return it
         } ?: kotlin.run { return hashMapOf() }
@@ -30,11 +28,11 @@ object KeysManager : PreferencesHolder("keys") {
 
     fun setDailyKeys(newValue: HashMap<Int, ByteArray>) {
         val hashMapString = Gson().toJson(newValue)
-        KeyManager.setString(DAILY_KEYS, hashMapString)
+        OnboardingManager.setString(DAILY_KEYS, hashMapString)
     }
 
     fun getMetaKeys(): HashMap<Int, ByteArray> {
-        val storedHashMapString = KeyManager.getString(META_KEYS)
+        val storedHashMapString = OnboardingManager.getString(META_KEYS)
         (Gson().fromJson(storedHashMapString) as? HashMap<Int, ByteArray>)?.let {
             return it
         } ?: kotlin.run { return hashMapOf() }
@@ -42,7 +40,7 @@ object KeysManager : PreferencesHolder("keys") {
 
     fun setMetaKeys(newValue: HashMap<Int, ByteArray>) {
         val hashMapString = Gson().toJson(newValue)
-        KeyManager.setString(META_KEYS, hashMapString)
+        OnboardingManager.setString(META_KEYS, hashMapString)
     }
 
     private fun getLastUploadDay(): Int {
@@ -61,10 +59,11 @@ object KeysManager : PreferencesHolder("keys") {
         setBoolean(DISCLOSE_META_DATA, value)
     }
 
-    fun uploadNewKeys() {
+    fun uploadNewKeys(includeToday: Boolean = false) {
         val oldLastUploadDay = getLastUploadDay()
 
         // Uploading after EOD to include widest borders
+        val currentDayNumber = CryptoUtil.currentDayNumber()
         val previousDayNumber = CryptoUtil.currentDayNumber() - 1
 
         if (oldLastUploadDay == previousDayNumber) {
@@ -74,27 +73,44 @@ object KeysManager : PreferencesHolder("keys") {
         val borders = LocationBordersManager.getLocationBorders()
 
         val keysData = KeysData()
+
+        fun addKey(dayNumber: Int) {
+            // We currently don't upload diagnostic keys without location data!
+            borders[dayNumber]?.let { border ->
+                border.secure()
+
+                val dailyKey = getDailyKeys()[dayNumber]!!.base64EncodedString()
+                val meta = if (isDiscloseMetaData()) {
+                    getMetaKeys()[dayNumber]!!.base64EncodedString()
+                } else {
+                    null
+                }
+
+                val key = Key(dailyKey, meta, dayNumber, border)
+
+                keysData.keys.add(key)
+            }
+        }
+
+        if (includeToday) {
+            // Include key for today when reporting exposure
+            // This key will be uploaded again next day with updated borders
+            addKey(currentDayNumber)
+        }
+
         val diff = min(previousDayNumber - oldLastUploadDay, DataManager.maxDays)
 
         var offset = 0
         while (offset < diff) {
             val dayNumber = previousDayNumber - offset
 
-            // We currently don't upload diagnostic keys without location data!
-            borders[dayNumber]?.let { border ->
-                val keyValue = CryptoUtil.spec.getDailyKey(dayNumber).base64EncodedString()
-                border.secure()
-                val key = Key(keyValue, dayNumber, border)
-
-                keysData.keys.add(key)
-            }
+            addKey(dayNumber)
 
             offset += 1
         }
 
         apiClient.sendKeys(keysData)
             .enqueue(object : Callback<String> {
-
                 override fun onResponse(call: Call<String>, response: Response<String>) {
                     setLastUploadDay(previousDayNumber)
                 }
@@ -102,8 +118,17 @@ object KeysManager : PreferencesHolder("keys") {
                 override fun onFailure(call: Call<String>, t: Throwable) {
                     println("ERROR: ${t.message}")
                 }
-
             })
     }
 
 }
+
+
+data class KeysData(var keys: MutableList<Key> = arrayListOf())
+
+data class Key(
+    val value: String,
+    val meta: String?,
+    val day: Int,
+    val border: LocationBordersManager.LocationBorder
+)

@@ -13,7 +13,7 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
     private const val LOCATION_BORDERS = "locationBorders"
 
     fun getLocationBorders(): HashMap<Int, LocationBorder> {
-        val storedHashMapString = KeyManager.getString(LOCATION_BORDERS)
+        val storedHashMapString = OnboardingManager.getString(LOCATION_BORDERS)
         (Gson().fromJson(storedHashMapString) as? HashMap<Int, LocationBorder>)?.let {
             return it
         } ?: kotlin.run { return hashMapOf() }
@@ -21,7 +21,7 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
 
     fun setLocationBorders(newValue: HashMap<Int, LocationBorder>) {
         val hashMapString = Gson().toJson(newValue)
-        KeyManager.setString(LOCATION_BORDERS, hashMapString)
+        OnboardingManager.setString(LOCATION_BORDERS, hashMapString)
     }
 
     fun removeOldLocationBorders() {

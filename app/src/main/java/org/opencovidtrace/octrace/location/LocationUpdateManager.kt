@@ -2,13 +2,9 @@ package org.opencovidtrace.octrace.location
 
 import android.location.Location
 import org.greenrobot.eventbus.EventBus
-import org.opencovidtrace.octrace.data.TrackingPoint
 import org.opencovidtrace.octrace.data.UpdateUserTracksEvent
-import org.opencovidtrace.octrace.storage.LocationBordersManager
-import org.opencovidtrace.octrace.storage.TrackingManager
+import org.opencovidtrace.octrace.storage.*
 import org.opencovidtrace.octrace.storage.TrackingManager.trackingIntervalMs
-import org.opencovidtrace.octrace.storage.TracksManager
-import org.opencovidtrace.octrace.storage.UserStatusManager
 
 object LocationUpdateManager {
 
@@ -26,7 +22,8 @@ object LocationUpdateManager {
 
         val now = System.currentTimeMillis()
         if (now - lastTrackingUpdate > trackingIntervalMs &&
-                location.accuracy > 0) {//TODO real accuracy checker
+            location.accuracy > 0 && location.accuracy < 30
+        ) {
             println("Updating tracking location")
 
             val point = TrackingPoint(location)

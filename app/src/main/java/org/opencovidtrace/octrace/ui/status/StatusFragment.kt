@@ -50,7 +50,7 @@ class StatusFragment : Fragment() {
         UserStatusManager.setStatus(status)
 
         TracksManager.uploadNewTracks()
-        KeysManager.uploadNewKeys()
+        KeysManager.uploadNewKeys(includeToday = true)
 
         refreshStatus()
     }

@@ -8,7 +8,7 @@ object EncryptionKeysManager : PreferencesHolder("encryption-keys") {
     private const val ENCRYPTION_KEYS = "encryptionKeys"
 
     fun getEncryptionKeys(): HashMap<Long, ByteArray> {
-        val storedHashMapString = KeyManager.getString(ENCRYPTION_KEYS)
+        val storedHashMapString = OnboardingManager.getString(ENCRYPTION_KEYS)
         (Gson().fromJson(storedHashMapString) as? HashMap<Long, ByteArray>)?.let {
             return it
         } ?: kotlin.run { return hashMapOf() }
@@ -16,7 +16,7 @@ object EncryptionKeysManager : PreferencesHolder("encryption-keys") {
 
     fun setEncryptionKeys(newValue: HashMap<Long, ByteArray>) {
         val hashMapString = Gson().toJson(newValue)
-        KeyManager.setString(ENCRYPTION_KEYS, hashMapString)
+        OnboardingManager.setString(ENCRYPTION_KEYS, hashMapString)
     }
 
     fun removeOldKeys() {

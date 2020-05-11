@@ -23,7 +23,7 @@ import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.di.BluetoothManagerProvider
 import org.opencovidtrace.octrace.ext.access.isNotGranted
 import org.opencovidtrace.octrace.ext.data.insertLogs
-import org.opencovidtrace.octrace.ext.text.dateTimeFormat
+import org.opencovidtrace.octrace.ext.text.dateFullFormat
 import java.util.*
 
 
@@ -178,7 +178,6 @@ class BleUpdatesService : Service() {
         return notGrantedPermissions.isEmpty()
     }
 
-
     override fun onDestroy() {
         isRunningInInForegroundService = false
         unregisterReceiver(tickReceiver)
@@ -244,9 +243,8 @@ class BleUpdatesService : Service() {
             stopSelf()
     }
 
-
     private fun getNotification(): Notification? {
-        val text: CharSequence = Calendar.getInstance().dateTimeFormat()
+        val text: CharSequence = Date().dateFullFormat()
         val intent = Intent(this, MainActivity::class.java)
 
         val pendingIntent = PendingIntent.getActivity(

@@ -43,7 +43,6 @@ object AESEncryptor {
 
     @SuppressLint("GetInstance")
     fun decryptWithAES(bytesToDecrypt: ByteArray, keyBytes: ByteArray): ByteArray? {
-
         try {
             val skey = SecretKeySpec(keyBytes, "AES")
 
