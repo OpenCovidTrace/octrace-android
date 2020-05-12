@@ -1,8 +1,6 @@
 package org.opencovidtrace.octrace.storage
 
 import com.google.gson.Gson
-import org.opencovidtrace.octrace.data.Track
-import org.opencovidtrace.octrace.data.TracksData
 import org.opencovidtrace.octrace.di.api.ApiClientProvider
 import org.opencovidtrace.octrace.utils.CryptoUtil
 import retrofit2.Call
@@ -17,7 +15,7 @@ object TracksManager : PreferencesHolder("tracks") {
     private val apiClient by ApiClientProvider()
 
     fun getTracks(): List<Track> {
-        val storedHashMapString = KeyManager.getString(TRACKS)
+        val storedHashMapString = OnboardingManager.getString(TRACKS)
         (Gson().fromJson(storedHashMapString) as? List<Track>)?.let {
             return it
         } ?: kotlin.run { return arrayListOf() }
@@ -25,7 +23,7 @@ object TracksManager : PreferencesHolder("tracks") {
 
     fun setTracks(newValue: List<Track>) {
         val hashMapString = Gson().toJson(newValue)
-        KeyManager.setString(TRACKS, hashMapString)
+        OnboardingManager.setString(TRACKS, hashMapString)
     }
 
     fun removeOldTracks() {
@@ -90,3 +88,8 @@ object TracksManager : PreferencesHolder("tracks") {
     }
 
 }
+
+
+data class Track(var points: MutableList<TrackingPoint>, val day: Int, val key: String)
+
+data class TracksData(var tracks: List<Track>)

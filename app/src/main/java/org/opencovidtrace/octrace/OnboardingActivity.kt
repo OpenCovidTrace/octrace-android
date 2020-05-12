@@ -10,8 +10,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import org.opencovidtrace.octrace.MainActivity.Companion.REQUEST_LOCATION
 import org.opencovidtrace.octrace.OnboardingActivity.Extra.STAGE_EXTRA
-import org.opencovidtrace.octrace.storage.KeyManager
-import org.opencovidtrace.octrace.utils.CryptoUtil
+import org.opencovidtrace.octrace.storage.OnboardingManager
+import org.opencovidtrace.octrace.storage.OnboardingStage
 
 class OnboardingActivity : AppCompatActivity() {
 
@@ -45,7 +45,7 @@ class OnboardingActivity : AppCompatActivity() {
         button.setOnClickListener {
             when (stage) {
                 OnboardingStage.WELCOME -> {
-                    KeyManager.setKey(CryptoUtil.generateKey(32))
+                    OnboardingManager.setStatus(OnboardingStage.COMPLETE)
 
                     goNext(OnboardingStage.LOCATION)
                 }
@@ -99,8 +99,5 @@ class OnboardingActivity : AppCompatActivity() {
         setResult(Activity.RESULT_OK)
         finish()
     }
-}
 
-internal enum class OnboardingStage {
-    WELCOME, LOCATION
 }

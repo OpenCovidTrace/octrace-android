@@ -17,7 +17,7 @@ import java.util.*
 class QrCodeViewModel : ViewModel() {
 
     fun generateBitmap(token: String, qrCodeCallback: (Bitmap?) -> Unit) {
-        val rollingId = CryptoUtil.getRollingId().base64EncodedString()
+        val rpi = CryptoUtil.getCurrentRpi().base64EncodedString()
         val tst = System.currentTimeMillis()
         val key = EncryptionKeysManager.generateKey(tst).base64EncodedString()
         val url: String =
@@ -25,7 +25,7 @@ class QrCodeViewModel : ViewModel() {
                 .buildUpon()
                 .appendQueryParameter("p", "a")
                 .appendQueryParameter("d", token)
-                .appendQueryParameter("i", rollingId)
+                .appendQueryParameter("r", rpi)
                 .appendQueryParameter("k", key)
                 .appendQueryParameter("t", String.format("%d", tst))
                 .build().toString()

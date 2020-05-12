@@ -1,61 +1,97 @@
 package org.opencovidtrace.octrace.storage
 
 import com.google.gson.Gson
-import org.opencovidtrace.octrace.data.KeysData
-import org.opencovidtrace.octrace.data.QrContact
-import org.opencovidtrace.octrace.data.QrContactHealth
+import org.opencovidtrace.octrace.data.ContactCoord
+import org.opencovidtrace.octrace.data.ContactMetaData
 import org.opencovidtrace.octrace.utils.CryptoUtil
+import org.opencovidtrace.octrace.utils.CryptoUtil.base64DecodeByteArray
+import org.opencovidtrace.octrace.utils.CryptoUtil.base64EncodedString
 
 object QrContactsManager : PreferencesHolder("qr-contacts") {
 
     private const val CONTACTS = "contacts"
 
-    fun getContacts(): List<QrContactHealth> {
-        val storedHashMapString = KeyManager.getString(CONTACTS)
-        (Gson().fromJson(storedHashMapString) as? List<QrContactHealth>)?.let {
+    fun getContacts(): List<QrContact> {
+        val jsonString = getString(CONTACTS)
+        (Gson().fromJson(jsonString) as? List<QrContact>)?.let {
             return it
         } ?: kotlin.run { return arrayListOf() }
     }
 
-    fun setContacts(newValue: List<QrContactHealth>) {
+    fun setContacts(newValue: List<QrContact>) {
         val hashMapString = Gson().toJson(newValue)
-        KeyManager.setString(CONTACTS, hashMapString)
+        setString(CONTACTS, hashMapString)
     }
 
     fun removeOldContacts() {
-        val expirationTimestamp = DataManager.expirationTimestamp()
+        val expirationDay = DataManager.expirationDay()
 
-        val newContacts = getContacts().filter { it.contact.tst > expirationTimestamp }
+        val newContacts = getContacts().filter { it.day > expirationDay }
 
         setContacts(newContacts)
     }
 
-    fun matchContacts(keysData: KeysData) : QrContact? {
+    fun matchContacts(keysData: KeysData): Pair<Boolean, ContactCoord?> {
         val newContacts = getContacts()
 
-        var lastInfectedContact: QrContact?=null
+        var hasExposure = false
+        var lastExposedContactCoord: ContactCoord? = null
 
         newContacts.forEach { contact ->
-            val contactDate =contact.contact.date()
-            val contactDay = CryptoUtil.getDayNumber(contactDate)
+            keysData.keys.filter {
+                it.day == contact.day
+            }.forEach { key ->
+                if (CryptoUtil.match(contact.rollingId, contact.day, key.value.toByteArray())) {
+                    contact.exposed = true
 
-            keysData.keys.firstOrNull { it.day== contactDay &&
-                    CryptoUtil.spec.match(contact.contact.id, contactDate, it.value.toByteArray())}?.let {
-                contact.infected = true
-                lastInfectedContact = contact.contact
+                    key.meta?.let { metaKey ->
+                        contact.metaData = CryptoUtil.decodeMetaData(
+                            contact.meta.toByteArray(),
+                            metaKey.toByteArray()
+                        )
+
+                        contact.metaData?.coord?.let {
+                            lastExposedContactCoord = it
+                        }
+                    }
+
+                    hasExposure = true
+                }
             }
         }
 
         setContacts(newContacts)
 
-        return lastInfectedContact
+        return Pair(hasExposure, lastExposedContactCoord)
     }
 
     fun addContact(contact: QrContact) {
         val newContacts = getContacts().toMutableList()
 
-        newContacts.add(QrContactHealth(contact))
+        newContacts.add(contact)
 
         setContacts(newContacts)
+    }
+
+}
+
+
+data class QrContact(
+    val rollingId: String,
+    val meta: String,
+    val day: Int = CryptoUtil.currentDayNumber(),
+    var exposed: Boolean = false,
+    var metaData: ContactMetaData? = null
+) {
+    companion object {
+        fun create(rpi: String): QrContact {
+            val rpiData = rpi.base64DecodeByteArray()
+
+            return QrContact(
+                rpiData.sliceArray(0 until CryptoUtil.keyLength).base64EncodedString(),
+                rpiData.sliceArray(CryptoUtil.keyLength until CryptoUtil.keyLength * 2)
+                    .base64EncodedString()
+            )
+        }
     }
 }

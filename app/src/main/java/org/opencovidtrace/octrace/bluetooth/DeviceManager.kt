@@ -6,12 +6,11 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.ParcelUuid
 import org.opencovidtrace.octrace.data.ADV_TAG
-import org.opencovidtrace.octrace.data.BtEncounter
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.data.SCAN_TAG
 import org.opencovidtrace.octrace.ext.data.insertLogs
-import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.storage.BtContactsManager
+import org.opencovidtrace.octrace.storage.BtEncounter
 import org.opencovidtrace.octrace.utils.CryptoUtil
 import org.opencovidtrace.octrace.utils.CryptoUtil.base64EncodedString
 import java.util.*
@@ -220,12 +219,15 @@ class DeviceManager(private val context: Context) {
             "Success Characteristic Read ${characteristic.value?.contentToString() ?: "is empty"}",
             SCAN_TAG
         )
-        val base64 = characteristic.value.base64EncodedString()
+        val data = characteristic.value
+
+        val rollingId = data.sliceArray(0 until CryptoUtil.keyLength).base64EncodedString()
+        val meta = data.sliceArray(CryptoUtil.keyLength until CryptoUtil.keyLength * 2)
+            .base64EncodedString()
         deviceStatusListener?.onDataReceived(scanResult.device, characteristic.value)
-        val location = LocationUpdateManager.getLastLocation()
-        location?.let {
-            BtContactsManager.addContact(base64, BtEncounter(scanResult.rssi, location))
-        }
+
+        val day = CryptoUtil.currentDayNumber()
+        BtContactsManager.addContact(rollingId, day, BtEncounter(scanResult.rssi, meta))
 
         closeConnection()
     }
@@ -248,33 +250,38 @@ class DeviceManager(private val context: Context) {
         if (advertisingActive)
             return true
         if (!bluetoothAdapter.isMultipleAdvertisementSupported) {
-            insertLogs("Advertisement not supported", ADV_TAG)
+            insertLogs("Multiple advertisement is not supported", ADV_TAG)
+        }
+        if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            insertLogs("Bluetooth LE is not supported", ADV_TAG)
+            return false
+        }
+        val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
+            bluetoothManager.adapter.bluetoothLeAdvertiser
+        if (bluetoothLeAdvertiser == null) {
+            insertLogs("Bluetooth LE advertiser is unavailable", ADV_TAG)
             return false
         }
 
-        val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
-            bluetoothManager.adapter.bluetoothLeAdvertiser
+        val settings = AdvertiseSettings.Builder()
+            .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
+            .setConnectable(true)
+            .setTimeout(0)
+            .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW)
+            .build()
 
-        bluetoothLeAdvertiser?.let {
-            val settings = AdvertiseSettings.Builder()
-                .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
-                .setConnectable(true)
-                .setTimeout(0)
-                .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_ULTRA_LOW)
-                .build()
+        val data = AdvertiseData.Builder()
+            .setIncludeDeviceName(true)
+            .setIncludeTxPowerLevel(false)
+            .setIncludeDeviceName(false)
+            .addServiceUuid(ParcelUuid(SERVICE_UUID))
+            .build()
 
-            val data = AdvertiseData.Builder()
-                .setIncludeDeviceName(true)
-                .setIncludeTxPowerLevel(false)
-                .setIncludeDeviceName(false)
-                .addServiceUuid(ParcelUuid(SERVICE_UUID))
-                .build()
+        bluetoothLeAdvertiser.startAdvertising(settings, data, advertiseCallback)
+        insertLogs("Start Advertising $SERVICE_UUID", ADV_TAG)
+        advertisingActive = true
 
-            it.startAdvertising(settings, data, advertiseCallback)
-            insertLogs("Start Advertising $SERVICE_UUID", ADV_TAG)
-            advertisingActive = true
-            return true
-        } ?: return false
+        return true
     }
 
     /**
@@ -355,7 +362,7 @@ class DeviceManager(private val context: Context) {
                         requestId,
                         BluetoothGatt.GATT_SUCCESS,
                         0,
-                        CryptoUtil.getRollingId()
+                        CryptoUtil.getCurrentRpi()
                     )
                 }
                 else -> {

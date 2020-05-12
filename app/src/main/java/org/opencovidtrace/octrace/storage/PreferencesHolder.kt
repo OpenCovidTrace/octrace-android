@@ -58,7 +58,13 @@ open class PreferencesHolder(private val preferencesName: String) {
         editor.apply()
     }
 
-    inline fun <reified T> Gson.fromJson(json: String?) =
-        this.fromJson<T>(json, object : TypeToken<T>() {}.type)
+    inline fun <reified T> Gson.fromJson(json: String?): T? {
+        try {
+            return this.fromJson<T>(json, object : TypeToken<T>() {}.type)
+        }catch (e:Exception){
+            e.printStackTrace()
+        }
+        return null
+    }
 
 }

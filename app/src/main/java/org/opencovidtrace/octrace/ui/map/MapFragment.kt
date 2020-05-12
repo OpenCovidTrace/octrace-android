@@ -2,6 +2,7 @@ package org.opencovidtrace.octrace.ui.map
 
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,17 +22,13 @@ import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import org.opencovidtrace.octrace.R
 import org.opencovidtrace.octrace.data.LocationIndex
-import org.opencovidtrace.octrace.data.TrackingPoint
-import org.opencovidtrace.octrace.data.TracksData
 import org.opencovidtrace.octrace.data.UpdateUserTracksEvent
 import org.opencovidtrace.octrace.di.api.ApiClientProvider
 import org.opencovidtrace.octrace.location.LocationUpdateManager
-import org.opencovidtrace.octrace.storage.LocationBordersManager
-import org.opencovidtrace.octrace.storage.LocationIndexManager
-import org.opencovidtrace.octrace.storage.TrackingManager
-import org.opencovidtrace.octrace.storage.TracksManager
+import org.opencovidtrace.octrace.storage.*
 import org.opencovidtrace.octrace.ui.map.logs.LogsFragment
 import org.opencovidtrace.octrace.ui.map.qrcode.QrCodeFragment
+import org.opencovidtrace.octrace.utils.CryptoUtil
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -50,7 +47,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private var googleMap: GoogleMap? = null
 
     var userPolylines = mutableListOf<Polyline>()
-    var sickPolylines= mutableListOf<Polyline>()
+    var sickPolylines = mutableListOf<Polyline>()
 
 
     override fun onCreateView(
@@ -81,6 +78,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         googleMap = map
         LocationUpdateManager.registerCallback { location ->
             loadTracks(location)
+
             activity?.runOnUiThread {
                 map?.moveCamera(
                     CameraUpdateFactory.newCameraPosition(
@@ -114,7 +112,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 PolylineOptions()
                     .clickable(true)
                     .addAll(it)
-            )?.let {polyline->
+            )?.let { polyline ->
                 polyline.color = userPolylineColor
                 userPolylines.add(polyline)
             }
@@ -126,7 +124,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private fun updateExtTracks() {
         println("Updating external tracks...")
 
-        val sickPolylines : MutableList<List<LatLng>> = mutableListOf()
+        val sickPolylines: MutableList<List<LatLng>> = mutableListOf()
 
         TracksManager.getTracks().forEach { track ->
             val trackPolylines = makePolylines(track.points)
@@ -144,7 +142,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 PolylineOptions()
                     .clickable(true)
                     .addAll(it)
-            )?.let {polyline->
+            )?.let { polyline ->
                 polyline.color = sickPolylineColor
                 this.sickPolylines.add(polyline)
             }
@@ -159,7 +157,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun makePolylines(points: List<TrackingPoint>): List<List<LatLng>> {
-        val polylines : MutableList<List<LatLng>> = mutableListOf()
+        val polylines: MutableList<List<LatLng>> = mutableListOf()
         var lastPolyline = mutableListOf<LatLng>()
         var lastTimestamp = 0L
 
@@ -260,14 +258,35 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         ).enqueue(object : Callback<TracksData> {
 
             override fun onResponse(call: Call<TracksData>, response: Response<TracksData>) {
-                response.body()?.tracks?.let { TracksManager.addTracks(it) }
+                response.body()?.tracks?.let { tracks ->
+                    LocationIndexManager.updateTracksIndex(index)
+
+                    if (tracks.isEmpty()) {
+                        return
+                    }
+
+                    val latestSecretDailyKeys = CryptoUtil.getLatestSecretDailyKeys()
+
+                    val tracksFiltered = tracks.filter { !latestSecretDailyKeys.contains(it.key) }
+
+                    Log.i(
+                        "TRACKS",
+                        "Got ${tracksFiltered.size} new tracks since $lastUpdateTimestamp for ${border}."
+                    )
+
+                    if (tracksFiltered.isEmpty()) {
+                        return
+                    }
+
+                    TracksManager.addTracks(tracksFiltered)
+                    updateExtTracks()
+                }
             }
 
             override fun onFailure(call: Call<TracksData>, t: Throwable) {
-                println("ERROR: ${t.message}")
+                Log.e("TRACKS", "ERROR: ${t.message}", t)
             }
-
         })
-        updateExtTracks()
     }
+
 }
