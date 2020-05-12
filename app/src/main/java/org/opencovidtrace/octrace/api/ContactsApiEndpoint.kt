@@ -9,6 +9,6 @@ import retrofit2.http.POST
 interface ContactsApiEndpoint {
 
     @POST("makeContact")
-    fun sendContactRequest(@Body contactRequest: ContactRequest): Call<String>
+    fun sendContactRequest(@Body contactRequest: ContactRequest): Call<Void>
 
 }

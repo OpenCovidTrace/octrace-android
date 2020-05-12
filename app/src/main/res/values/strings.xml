@@ -21,7 +21,8 @@
     <string name="bluetooth_on">Bluetooth on</string>
     <string name="turning_bluetooth_on">Turning Bluetooth on…</string>
     <string name="bluetooth_unknown_state">Bluetooth unknown state</string>
-
+    <string name="exposed_contact_message">A contact you have recorded has reported exposure.</string>
+    <string name="contact_at_date">Contact %s</string>
     <!-- MainActivity -->
     <string name="title_newsroom">Newsroom</string>
     <string name="title_map">Map</string>

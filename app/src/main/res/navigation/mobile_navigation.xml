@@ -25,5 +25,7 @@
 
     <deepLink
         android:id="@+id/deepLink"
-        app:uri="contacts.dev.opencovidtrace.org/app/contact?d={d}&amp;i={i}&amp;k={k}&amp;t={t}&amp;p={p}" />
+        android:autoVerify="true"
+        app:uri="contact.dev.opencovidtrace.org/app/contact?d={d}&amp;i={i}&amp;k={k}&amp;t={t}&amp;p={p}"
+        tools:ignore="UnusedAttribute" />
 </navigation>

@@ -12,18 +12,19 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Polyline
-import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.gms.maps.model.*
 import kotlinx.android.synthetic.main.fragment_map.*
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import org.opencovidtrace.octrace.R
+import org.opencovidtrace.octrace.data.ContactCoord
 import org.opencovidtrace.octrace.data.LocationIndex
 import org.opencovidtrace.octrace.data.UpdateUserTracksEvent
 import org.opencovidtrace.octrace.di.api.ApiClientProvider
+import org.opencovidtrace.octrace.ext.ifAllNotNull
+import org.opencovidtrace.octrace.ext.text.dateFullFormat
+import org.opencovidtrace.octrace.ext.ui.toast
 import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.storage.*
 import org.opencovidtrace.octrace.ui.map.logs.LogsFragment
@@ -46,6 +47,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private lateinit var mapView: MapView
     private var googleMap: GoogleMap? = null
 
+    private var mkContactPoints: HashMap<Marker, QrContact> = hashMapOf()
     var userPolylines = mutableListOf<Polyline>()
     var sickPolylines = mutableListOf<Polyline>()
 
@@ -78,6 +80,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         googleMap = map
         LocationUpdateManager.registerCallback { location ->
             loadTracks(location)
+            loadDiagnosticKeys(location)
 
             activity?.runOnUiThread {
                 map?.moveCamera(
@@ -174,14 +177,18 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             val timestamp = point.tst
             val coordinate = point.coordinate()
 
-            if (lastTimestamp == 0L) {
-                lastPolyline = arrayListOf(coordinate)
-            } else if (timestamp - lastTimestamp > TrackingManager.trackingIntervalMs * 2) {
-                addPolyline()
+            when {
+                lastTimestamp == 0L -> {
+                    lastPolyline = arrayListOf(coordinate)
+                }
+                timestamp - lastTimestamp > TrackingManager.trackingIntervalMs * 2 -> {
+                    addPolyline()
 
-                lastPolyline = arrayListOf(coordinate)
-            } else {
-                lastPolyline.add(coordinate)
+                    lastPolyline = arrayListOf(coordinate)
+                }
+                else -> {
+                    lastPolyline.add(coordinate)
+                }
             }
 
             lastTimestamp = timestamp
@@ -190,6 +197,32 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         addPolyline()
 
         return polylines
+    }
+
+    fun updateContacts() {
+
+        mkContactPoints.keys.forEach { it.remove() }
+        mkContactPoints.clear()
+
+        QrContactsManager.getContacts().forEach { contact ->
+            ifAllNotNull(contact.metaData, contact.metaData?.coord) { metaData, coord ->
+                googleMap?.addMarker(
+                    MarkerOptions().position(coord.coordinate())
+                        .title(getString(R.string.contact_at_date, metaData.date.dateFullFormat()))
+                )?.let {
+                    mkContactPoints[it] = contact
+                }
+            }
+        }
+
+    }
+
+    fun goToContact(coord: ContactCoord) {
+        goToLocation(LatLng(coord.lat, coord.lng))
+    }
+
+    private fun goToLocation(latLng: LatLng) {
+        googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
     }
 
     private fun showLogs() {
@@ -246,7 +279,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
 
     private fun loadTracks(location: Location) {
         val index = LocationIndex(location)
-        val lastUpdateTimestamp = LocationIndexManager.getKeysIndex()[index] ?: 0
+        val lastUpdateTimestamp = LocationIndexManager.getTracksIndex()[index] ?: 0
         val border = LocationBordersManager.LocationBorder.fetchLocationBorderByIndex(index)
 
         apiClient.fetchTracks(
@@ -287,6 +320,58 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 Log.e("TRACKS", "ERROR: ${t.message}", t)
             }
         })
+    }
+
+    private fun loadDiagnosticKeys(location: Location) {
+        val index = LocationIndex(location)
+        val lastUpdateTimestamp = LocationIndexManager.getKeysIndex()[index] ?: 0
+        val border = LocationBordersManager.LocationBorder.fetchLocationBorderByIndex(index)
+
+        apiClient.fetchKeys(
+            lastUpdateTimestamp,
+            border.minLat,
+            border.maxLat,
+            border.minLng,
+            border.maxLng
+        ).enqueue(object : Callback<KeysData> {
+
+            override fun onResponse(call: Call<KeysData>, response: Response<KeysData>) {
+                response.body()?.let { data ->
+                    LocationIndexManager.updateKeysIndex(index)
+
+                    if (data.keys.isNullOrEmpty()) {
+                        return
+                    }
+
+                    val qrContacts = QrContactsManager.matchContacts(data)
+                    val btContacts = BtContactsManager.matchContacts(data)
+
+                    val hasQrExposure = qrContacts.first
+                    val hasBtExposure = btContacts.first
+
+                    if (hasQrExposure || hasBtExposure) {
+                        showExposedNotification()
+                    }
+
+                    qrContacts.second?.let {
+                        goToContact(it)
+                        updateContacts()
+                    } ?: btContacts.second?.let {
+                        goToContact(it)
+                        updateContacts()
+                    }
+
+                }
+            }
+
+            override fun onFailure(call: Call<KeysData>, t: Throwable) {
+                Log.e("TRACKS", "ERROR: ${t.message}", t)
+            }
+        })
+    }
+
+    private fun showExposedNotification() {
+        toast(R.string.exposed_contact_message)
     }
 
 }

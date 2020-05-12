@@ -314,16 +314,16 @@ class MainActivity : AppCompatActivity() {
         val contactRequest = ContactRequest(token, platform, secretData.base64EncodedString(), tst)
 
         contactsApiClient.sendContactRequest(contactRequest)
-            .enqueue(object : Callback<String> {
+            .enqueue(object : Callback<Void> {
 
-                override fun onResponse(call: Call<String>, response: Response<String>) {
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
                     val contact = QrContact.create(rpi)
 
                     QrContactsManager.addContact(contact)
                     showInfo(R.string.recorded_contact)
                 }
 
-                override fun onFailure(call: Call<String>, t: Throwable) {
+                override fun onFailure(call: Call<Void>, t: Throwable) {
                     t.message?.let { showError(it) }
                 }
 

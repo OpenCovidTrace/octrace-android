@@ -67,13 +67,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 )
 
                 val contact = QrContact(rollingId.base64EncodedString(), meta.base64EncodedString())
-
                 QrContactsManager.addContact(contact)
 
                 // TODO dismiss QrLinkViewController
             }
         }
     }
+
 
     private fun info(message: String) {
         val intentOpen = Intent(this, MainActivity::class.java)
