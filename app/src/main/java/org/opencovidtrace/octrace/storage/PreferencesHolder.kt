@@ -5,10 +5,12 @@ import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.opencovidtrace.octrace.di.ContextProvider
+import org.opencovidtrace.octrace.di.ObjectMapperProvider
 
 open class PreferencesHolder(private val preferencesName: String) {
 
     protected val context by ContextProvider()
+    protected val objectMapper by ObjectMapperProvider()
 
     private val preferences: SharedPreferences by lazy {
         context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
