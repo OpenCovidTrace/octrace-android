@@ -197,7 +197,7 @@ object CryptoUtil {
     }
 
     private fun getEncryptionKey(key: ByteArray): ByteArray =
-        hkdf.extractAndExpand(byteArrayOf(), key, info, CryptoUtil.keyLength)
+        hkdf.extractAndExpand(byteArrayOf(), key, info, keyLength)
 
 
     fun ByteArray.base64EncodedString(): String = Base64.encodeToString(this, Base64.DEFAULT)
