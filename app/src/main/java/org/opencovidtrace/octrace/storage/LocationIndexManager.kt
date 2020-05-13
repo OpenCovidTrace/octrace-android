@@ -1,7 +1,8 @@
 package org.opencovidtrace.octrace.storage
 
-import com.google.gson.Gson
+
 import org.opencovidtrace.octrace.data.LocationIndex
+
 
 object LocationIndexManager : PreferencesHolder("location-index") {
 
@@ -10,13 +11,13 @@ object LocationIndexManager : PreferencesHolder("location-index") {
 
     fun getKeysIndex(): HashMap<LocationIndex, Long> {
         val storedHashMapString = OnboardingManager.getString(KEYS_INDEX)
-        (Gson().fromJson(storedHashMapString) as? HashMap<LocationIndex, Long>)?.let {
+        (objectMapper.fromJson(storedHashMapString) as? HashMap<LocationIndex, Long>)?.let {
             return it
         } ?: kotlin.run { return hashMapOf() }
     }
 
     fun setKeysIndex(newValue: HashMap<LocationIndex, Long>) {
-        val hashMapString = Gson().toJson(newValue)
+        val hashMapString = objectMapper.toJson(newValue)
         OnboardingManager.setString(KEYS_INDEX, hashMapString)
     }
 
@@ -30,13 +31,13 @@ object LocationIndexManager : PreferencesHolder("location-index") {
 
     fun getTracksIndex(): HashMap<LocationIndex, Long> {
         val storedHashMapString = OnboardingManager.getString(TRACKS_INDEX)
-        (Gson().fromJson(storedHashMapString) as? HashMap<LocationIndex, Long>)?.let {
+        (objectMapper.fromJson(storedHashMapString) as? HashMap<LocationIndex, Long>)?.let {
             return it
         } ?: kotlin.run { return hashMapOf() }
     }
 
     fun setTracksIndex(newValue: HashMap<LocationIndex, Long>) {
-        val hashMapString = Gson().toJson(newValue)
+        val hashMapString = objectMapper.toJson(newValue)
         OnboardingManager.setString(TRACKS_INDEX, hashMapString)
     }
 

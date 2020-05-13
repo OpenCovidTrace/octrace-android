@@ -5,10 +5,12 @@ import android.content.SharedPreferences
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.opencovidtrace.octrace.di.ContextProvider
+import org.opencovidtrace.octrace.di.ObjectMapperProvider
 
 open class PreferencesHolder(private val preferencesName: String) {
 
     protected val context by ContextProvider()
+    protected val objectMapper by ObjectMapperProvider()
 
     private val preferences: SharedPreferences by lazy {
         context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
@@ -58,7 +60,13 @@ open class PreferencesHolder(private val preferencesName: String) {
         editor.apply()
     }
 
-    inline fun <reified T> Gson.fromJson(json: String?) =
-        this.fromJson<T>(json, object : TypeToken<T>() {}.type)
+    inline fun <reified T> Gson.fromJson(json: String?): T? {
+        try {
+            return this.fromJson<T>(json, object : TypeToken<T>() {}.type)
+        }catch (e:Exception){
+            e.printStackTrace()
+        }
+        return null
+    }
 
 }

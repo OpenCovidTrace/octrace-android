@@ -5,6 +5,7 @@ import android.location.Location
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.android.gms.maps.model.LatLng
+import com.google.gson.Gson
 import org.opencovidtrace.octrace.ext.text.dateFullFormat
 import java.util.*
 import kotlin.math.roundToInt
@@ -52,4 +53,8 @@ data class LocationIndex(val latIdx : Int, val lngIdx: Int){
         latIdx= (location.latitude * precision).roundToInt(),
         lngIdx= (location.longitude * precision).roundToInt()
     )
+
+    override fun toString(): String {
+        return Gson().toJson(this)
+    }
 }

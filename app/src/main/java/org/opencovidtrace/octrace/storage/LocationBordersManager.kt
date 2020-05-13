@@ -32,9 +32,9 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
         val newBorders: HashMap<Int, LocationBorder> = hashMapOf()
 
         oldBorders.keys.forEach { dayNumber ->
-                if (dayNumber > lastDay) {
-                    oldBorders[dayNumber]?.let {  newBorders[dayNumber] = it }
-                }
+            if (dayNumber > lastDay) {
+                oldBorders[dayNumber]?.let {  newBorders[dayNumber] = it }
+            }
         }
 
         setLocationBorders(newBorders)

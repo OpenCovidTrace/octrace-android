@@ -1,5 +1,10 @@
 package org.opencovidtrace.octrace.ext
 
+inline fun <A, B> ifAllNotNull(a: A?, b: B?, block: (A, B) -> Unit
+) {
+    if (a != null && b != null) block(a, b)
+}
+
 inline fun <A, B, C, D, E> ifAllNotNull(
     a: A?,
     b: B?,
