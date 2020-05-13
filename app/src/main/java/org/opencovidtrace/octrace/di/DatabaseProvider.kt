@@ -8,7 +8,7 @@ object DatabaseProvider : IndependentProvider<Database>() {
 
     override fun initInstance(): Database {
         val context by ContextProvider()
-        return Room.databaseBuilder(context, Database::class.java, "OctraceNew.db")
+        return Room.databaseBuilder(context, Database::class.java, "Octrace.db")
             .fallbackToDestructiveMigration()
             .build()
     }
