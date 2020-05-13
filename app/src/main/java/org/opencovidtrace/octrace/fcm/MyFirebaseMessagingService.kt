@@ -11,8 +11,11 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import org.greenrobot.eventbus.EventBus
 import org.opencovidtrace.octrace.MainActivity
 import org.opencovidtrace.octrace.R
+import org.opencovidtrace.octrace.data.MakeContactEvent
+import org.opencovidtrace.octrace.ext.ifAllNotNull
 import org.opencovidtrace.octrace.storage.EncryptionKeysManager
 import org.opencovidtrace.octrace.storage.QrContact
 import org.opencovidtrace.octrace.storage.QrContactsManager
@@ -53,23 +56,29 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val data = remoteMessage.data
 
         if (data["type"] == "MAKE_CONTACT") {
-            val secret = data["secret"]!!
-            val tst = data["tst"]!!.toLong()
+            ifAllNotNull(data["secret"], data["tst"]) { secret, tstString ->
+                val tst = tstString.toLong()
 
-            EncryptionKeysManager.getEncryptionKeys()[tst]?.let { key ->
-                val secretData = secret.base64DecodeByteArray()
+                EncryptionKeysManager.getEncryptionKeys()[tst]?.let { key ->
+                    val secretData = secret.base64DecodeByteArray()
 
-                val rollingId =
-                    CryptoUtil.decodeAES(secretData.sliceArray(0 until CryptoUtil.keyLength), key)
-                val meta = CryptoUtil.decodeAES(
-                    secretData.sliceArray(CryptoUtil.keyLength until CryptoUtil.keyLength * 2),
-                    key
-                )
+                    val rollingId =
+                        CryptoUtil.decodeAES(
+                            secretData.sliceArray(0 until CryptoUtil.keyLength),
+                            key
+                        )
+                    val meta = CryptoUtil.decodeAES(
+                        secretData.sliceArray(CryptoUtil.keyLength until CryptoUtil.keyLength * 2),
+                        key
+                    )
 
-                val contact = QrContact(rollingId.base64EncodedString(), meta.base64EncodedString())
-                QrContactsManager.addContact(contact)
+                    val contact =
+                        QrContact(rollingId.base64EncodedString(), meta.base64EncodedString())
+                    QrContactsManager.addContact(contact)
 
-                // TODO dismiss QrLinkViewController
+                    if (EventBus.getDefault().hasSubscriberForEvent(MakeContactEvent::class.java))
+                        EventBus.getDefault().post(MakeContactEvent())
+                }
             }
         }
     }

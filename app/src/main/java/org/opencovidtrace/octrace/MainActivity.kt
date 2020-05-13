@@ -130,6 +130,10 @@ class MainActivity : AppCompatActivity() {
             TrackingManager.removeOldPoints()
             LocationBordersManager.removeOldLocationBorders()
             EncryptionKeysManager.removeOldKeys()
+
+            if (UserStatusManager.sick()) {
+                KeysManager.uploadNewKeys()
+            }
         }
     }
 
