@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
             LocationBordersManager.removeOldLocationBorders()
             EncryptionKeysManager.removeOldKeys()
 
-            if (UserStatusManager.sick()) {
+            if (UserSettingsManager.sick()) {
                 KeysManager.uploadNewKeys()
             }
         }
@@ -166,7 +166,7 @@ class MainActivity : AppCompatActivity() {
         when (requestCode) {
             REQUEST_LOCATION -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    startTrackingService()
+                    startOrUpdateTrackingService()
                     startSearchDevices()
                 }
             }
@@ -183,7 +183,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun enableTracking() {
         if (LocationAccessManager.authorized(this)) {
-            startTrackingService()
+            startOrUpdateTrackingService()
             if (bleUpdatesService != null)
                 startBleService()
             else
@@ -238,7 +238,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startTrackingService() {
+    private fun startOrUpdateTrackingService() {
         startService(Intent(this, TrackingService::class.java))
     }
 

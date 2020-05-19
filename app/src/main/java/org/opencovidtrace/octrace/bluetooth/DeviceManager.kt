@@ -5,6 +5,7 @@ import android.bluetooth.le.*
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.ParcelUuid
+import android.util.Log
 import org.opencovidtrace.octrace.data.ADV_TAG
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.data.SCAN_TAG
@@ -64,14 +65,10 @@ class DeviceManager(private val context: Context) {
      * @param devicesCallback a callback for found devices
      *
      */
-    fun startSearchDevices(
-        devicesCallback: (ScanResult) -> Unit,
-        fromTimer: Boolean = false
-    ) {
-        if (scanActive)// && bluetoothAdapter?.isDiscovering == true
+    fun startSearchDevices(devicesCallback: (ScanResult) -> Unit) {
+        if (scanActive) {
             return
-        if (!fromTimer)
-            stopSearchDevices()
+        }
 
         val deviceFilter = ScanFilter.Builder()
             .apply { setServiceUuid(ParcelUuid(SERVICE_UUID)) }
@@ -96,7 +93,7 @@ class DeviceManager(private val context: Context) {
             scanCallback
         )
         scanActive = true
-        insertLogs("Start Scan", SCAN_TAG)
+        insertLogs(SCAN_TAG, "Start scan")
     }
 
     /**
@@ -109,7 +106,7 @@ class DeviceManager(private val context: Context) {
         }
         scanCallback?.let { bluetoothAdapter?.bluetoothLeScanner?.stopScan(it) }
         scanCallback = null
-        insertLogs("Stop Scan", SCAN_TAG)
+        insertLogs(SCAN_TAG, "Stop scan")
     }
 
     /**
@@ -131,7 +128,7 @@ class DeviceManager(private val context: Context) {
 
                 override fun onMtuChanged(gatt: BluetoothGatt?, mtu: Int, status: Int) {
                     super.onMtuChanged(gatt, mtu, status)
-                    insertLogs("Mtu Changed $mtu status $status", SCAN_TAG)
+                    Log.d(SCAN_TAG, "Mtu Changed $mtu status $status")
                     gatt?.discoverServices()
                 }
 
@@ -142,14 +139,14 @@ class DeviceManager(private val context: Context) {
                 ) {
                     when (newState) {
                         BluetoothProfile.STATE_CONNECTED -> {
-                            insertLogs("Device Connected ${device.address}", SCAN_TAG)
+                            Log.d(SCAN_TAG, "Device Connected ${device.address}")
                             deviceConnectCallback(device, true)
                             val mtu = 32 + 3 // Maximum allowed 517 - 3 bytes do BLE
                             bluetoothGatt?.requestMtu(mtu)
 
                         }
                         BluetoothProfile.STATE_DISCONNECTED -> {
-                            insertLogs("Device Disconnected ${device.address}", SCAN_TAG)
+                            Log.d(SCAN_TAG, "Disconnected ${device.address}")
                             deviceConnectCallback(device, false)
                             closeConnection()
                         }
@@ -157,7 +154,7 @@ class DeviceManager(private val context: Context) {
                     }
                     when (status) {
                         BluetoothGatt.GATT_FAILURE -> {
-                            insertLogs("Device connection failure ${device.address}", SCAN_TAG)
+                            insertLogs(SCAN_TAG, "Failed to connect to ${device.address}")
                             deviceConnectCallback(device, false)
                             closeConnection()
                         }
@@ -165,7 +162,8 @@ class DeviceManager(private val context: Context) {
                 }
 
                 override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-                    insertLogs("Services Discovered ${device.address}", SCAN_TAG)
+                    Log.d(SCAN_TAG, "Device discovered ${device.address}")
+
                     var hasServiceAndCharacteristic = false
                     val service = gatt.getService(SERVICE_UUID)
                     if (service != null) {
@@ -202,32 +200,36 @@ class DeviceManager(private val context: Context) {
      * Close connection with earlier connected device
      */
     fun closeConnection() {
-        insertLogs("Close Connection ${bluetoothGatt?.device?.address}", SCAN_TAG)
         bluetoothGatt?.close()
         bluetoothGatt = null
     }
 
-
     private fun isDeviceConnected() = bluetoothGatt != null
-
 
     private fun handleCharacteristics(
         scanResult: ScanResult,
         characteristic: BluetoothGattCharacteristic
     ) {
-        insertLogs(
-            "Success Characteristic Read ${characteristic.value?.contentToString() ?: "is empty"}",
-            SCAN_TAG
-        )
         val data = characteristic.value
 
-        val rollingId = data.sliceArray(0 until CryptoUtil.keyLength).base64EncodedString()
-        val meta = data.sliceArray(CryptoUtil.keyLength until CryptoUtil.keyLength * 2)
+        if (data.size != CryptoUtil.KEY_LENGTH * 2) {
+            insertLogs(SCAN_TAG, "Received unexpected data length: ${data.size}")
+
+            return
+        }
+
+        val rollingId = data.sliceArray(0 until CryptoUtil.KEY_LENGTH).base64EncodedString()
+        val meta = data.sliceArray(CryptoUtil.KEY_LENGTH until CryptoUtil.KEY_LENGTH * 2)
             .base64EncodedString()
         deviceStatusListener?.onDataReceived(scanResult.device, characteristic.value)
 
         val day = CryptoUtil.currentDayNumber()
         BtContactsManager.addContact(rollingId, day, BtEncounter(scanResult.rssi, meta))
+
+        insertLogs(
+            SCAN_TAG,
+            "Received RPI from ${scanResult.device.address} RSSI ${scanResult.rssi}"
+        )
 
         closeConnection()
     }
@@ -249,17 +251,22 @@ class DeviceManager(private val context: Context) {
     fun startAdvertising(): Boolean {
         if (advertisingActive)
             return true
+
         if (!bluetoothAdapter.isMultipleAdvertisementSupported) {
-            insertLogs("Multiple advertisement is not supported", ADV_TAG)
+            insertLogs(ADV_TAG, "Multiple advertisement is not supported")
         }
+
         if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            insertLogs("Bluetooth LE is not supported", ADV_TAG)
+            insertLogs(ADV_TAG, "Bluetooth LE is not supported")
+
             return false
         }
+
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothManager.adapter.bluetoothLeAdvertiser
         if (bluetoothLeAdvertiser == null) {
-            insertLogs("Bluetooth LE advertiser is unavailable", ADV_TAG)
+            insertLogs(ADV_TAG, "Bluetooth LE advertiser is unavailable")
+
             return false
         }
 
@@ -278,7 +285,6 @@ class DeviceManager(private val context: Context) {
             .build()
 
         bluetoothLeAdvertiser.startAdvertising(settings, data, advertiseCallback)
-        insertLogs("Start Advertising $SERVICE_UUID", ADV_TAG)
         advertisingActive = true
 
         return true
@@ -292,7 +298,6 @@ class DeviceManager(private val context: Context) {
             bluetoothManager.adapter.bluetoothLeAdvertiser
         bluetoothLeAdvertiser?.stopAdvertising(advertiseCallback)
         advertisingActive = false
-        insertLogs("Stop Advertising", ADV_TAG)
     }
 
     /**
@@ -300,13 +305,15 @@ class DeviceManager(private val context: Context) {
      */
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            insertLogs("Start Advertising Success ", ADV_TAG)
-            if (!startBleServer())
-                insertLogs("Unable to create GATT server", ADV_TAG)
+            insertLogs(ADV_TAG, "Advertising has started")
+
+            if (!startBleServer()) {
+                insertLogs(ADV_TAG, "Unable to create GATT server")
+            }
         }
 
         override fun onStartFailure(errorCode: Int) {
-            insertLogs("Start Advertising Failure errorCode $errorCode", ADV_TAG)
+            insertLogs(ADV_TAG, "Failed to start advertising: errorCode $errorCode")
         }
     }
 
@@ -315,6 +322,7 @@ class DeviceManager(private val context: Context) {
      */
     private fun startBleServer(): Boolean {
         bluetoothGattServer = bluetoothManager.openGattServer(context, gattServerCallback)
+
         return bluetoothGattServer?.addService(createService()) ?: false
     }
 
@@ -339,11 +347,10 @@ class DeviceManager(private val context: Context) {
     private val gattServerCallback = object : BluetoothGattServerCallback() {
 
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
-
             if (newState == BluetoothProfile.STATE_CONNECTED) {
-                insertLogs("Connection State Change state connected ${device.address}", ADV_TAG)
+                Log.d(ADV_TAG, "Connected to ${device.address}")
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                insertLogs("Connection State Change state disconnected ${device.address}", ADV_TAG)
+                Log.d(ADV_TAG, "Disconnected from ${device.address}")
             }
         }
 
@@ -353,10 +360,6 @@ class DeviceManager(private val context: Context) {
         ) {
             when (characteristic.uuid) {
                 MAIN_CHARACTERISTIC_UUID -> {
-                    insertLogs(
-                        "Read Server Characteristic $characteristic.uuid.toString()",
-                        ADV_TAG
-                    )
                     bluetoothGattServer?.sendResponse(
                         device,
                         requestId,
@@ -364,12 +367,17 @@ class DeviceManager(private val context: Context) {
                         0,
                         CryptoUtil.getCurrentRpi()
                     )
+
+                    insertLogs(
+                        ADV_TAG,
+                        "Sent RPI to ${device.address}"
+                    )
                 }
                 else -> {
                     // Invalid characteristic
                     insertLogs(
-                        "Invalid Characteristic Read ${characteristic.uuid.toString()}",
-                        ADV_TAG
+                        ADV_TAG,
+                        "Invalid Characteristic Read ${characteristic.uuid}"
                     )
                     bluetoothGattServer?.sendResponse(
                         device,
@@ -382,16 +390,16 @@ class DeviceManager(private val context: Context) {
             }
         }
 
-
         override fun onExecuteWrite(device: BluetoothDevice?, requestId: Int, execute: Boolean) {
             super.onExecuteWrite(device, requestId, execute)
-            insertLogs("Execute Write ${device?.address ?: ""}", ADV_TAG)
-        }
 
+            Log.d(ADV_TAG, "Execute Write ${device?.address ?: ""}")
+        }
     }
 
     fun stopServer() {
-        insertLogs("Stop gatt server", ADV_TAG)
+        insertLogs(ADV_TAG, "Stop gatt server")
+
         bluetoothGattServer?.close()
     }
 

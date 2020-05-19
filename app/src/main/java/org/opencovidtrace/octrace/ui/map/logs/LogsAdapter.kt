@@ -25,8 +25,7 @@ class LogsAdapter : BaseAdapter<LogTableValue, LogsAdapter.ViewHolder>() {
 
         override fun updateView(item: LogTableValue) {
             with(itemView) {
-                dateTimeTextView.text = item.getTimeWithTag()
-                logValueTextView.text = item.getLogValue()
+                textView.text = item.getLog()
             }
         }
     }

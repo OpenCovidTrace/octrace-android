@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import org.opencovidtrace.octrace.data.ContactCoord
 import org.opencovidtrace.octrace.data.ContactMetaData
 import org.opencovidtrace.octrace.utils.CryptoUtil
+import org.opencovidtrace.octrace.utils.CryptoUtil.base64DecodeByteArray
 
 object BtContactsManager : PreferencesHolder("bt-contacts") {
 
@@ -39,21 +40,25 @@ object BtContactsManager : PreferencesHolder("bt-contacts") {
             keysData.keys.filter {
                 it.day == contact.day
             }.forEach { key ->
-                if (CryptoUtil.match(contact.rollingId, contact.day, key.value.toByteArray())) {
+                if (CryptoUtil.match(
+                        contact.rollingId,
+                        contact.day,
+                        key.value.base64DecodeByteArray()
+                    )
+                ) {
                     contact.exposed = true
 
                     key.meta?.let { metaKey ->
                         contact.encounters.forEach { encounter ->
                             encounter.metaData = CryptoUtil.decodeMetaData(
-                                encounter.meta.toByteArray(),
-                                metaKey.toByteArray()
+                                encounter.meta.base64DecodeByteArray(),
+                                metaKey.base64DecodeByteArray()
                             )
 
                             encounter.metaData?.coord?.let {
                                 lastExposedContactCoord = it
                             }
                         }
-
 
                     }
 

@@ -41,13 +41,13 @@ object QrContactsManager : PreferencesHolder("qr-contacts") {
             keysData.keys.filter {
                 it.day == contact.day
             }.forEach { key ->
-                if (CryptoUtil.match(contact.rollingId, contact.day, key.value.toByteArray())) {
+                if (CryptoUtil.match(contact.rollingId, contact.day, key.value.base64DecodeByteArray())) {
                     contact.exposed = true
 
                     key.meta?.let { metaKey ->
                         contact.metaData = CryptoUtil.decodeMetaData(
-                            contact.meta.toByteArray(),
-                            metaKey.toByteArray()
+                            contact.meta.base64DecodeByteArray(),
+                            metaKey.base64DecodeByteArray()
                         )
 
                         contact.metaData?.coord?.let {
@@ -88,8 +88,8 @@ data class QrContact(
             val rpiData = rpi.base64DecodeByteArray()
 
             return QrContact(
-                rpiData.sliceArray(0 until CryptoUtil.keyLength).base64EncodedString(),
-                rpiData.sliceArray(CryptoUtil.keyLength until CryptoUtil.keyLength * 2)
+                rpiData.sliceArray(0 until CryptoUtil.KEY_LENGTH).base64EncodedString(),
+                rpiData.sliceArray(CryptoUtil.KEY_LENGTH until CryptoUtil.KEY_LENGTH * 2)
                     .base64EncodedString()
             )
         }

@@ -5,9 +5,10 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.VISIBLE
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
@@ -20,11 +21,12 @@ import org.greenrobot.eventbus.ThreadMode
 import org.opencovidtrace.octrace.R
 import org.opencovidtrace.octrace.data.ContactCoord
 import org.opencovidtrace.octrace.data.LocationIndex
+import org.opencovidtrace.octrace.data.UpdateLocationAccuracyEvent
 import org.opencovidtrace.octrace.data.UpdateUserTracksEvent
 import org.opencovidtrace.octrace.di.api.ApiClientProvider
 import org.opencovidtrace.octrace.ext.ifAllNotNull
 import org.opencovidtrace.octrace.ext.text.dateFullFormat
-import org.opencovidtrace.octrace.ext.ui.toast
+import org.opencovidtrace.octrace.ext.ui.showInfo
 import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.storage.*
 import org.opencovidtrace.octrace.ui.map.logs.LogsFragment
@@ -33,57 +35,77 @@ import org.opencovidtrace.octrace.utils.CryptoUtil
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlin.math.roundToInt
 
 
 class MapFragment : Fragment(), OnMapReadyCallback {
 
-    companion object {
-        const val userPolylineColor: Int = 0xFF0000ff.toInt()
-        const val sickPolylineColor: Int = 0xFFF57F17.toInt()
-    }
-
     private val apiClient by ApiClientProvider()
-    private lateinit var mapViewModel: MapViewModel
     private lateinit var mapView: MapView
     private var googleMap: GoogleMap? = null
 
-    private var mkContactPoints: HashMap<Marker, QrContact> = hashMapOf()
+    private var mkContactPoints = mutableListOf<Marker>()
+
     var userPolylines = mutableListOf<Polyline>()
     var sickPolylines = mutableListOf<Polyline>()
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        mapViewModel =
-            ViewModelProvider(this).get(MapViewModel::class.java)
         val root = inflater.inflate(R.layout.fragment_map, container, false)
 
         mapView = root.findViewById(R.id.map)
         mapView.onCreate(savedInstanceState)
 
         mapView.getMapAsync(this)
+
         return root
     }
-
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         EventBus.getDefault().register(this)
-        logsImageButton.setOnClickListener { showLogs() }
+        logsButton.setOnClickListener { showLogs() }
         recordContactButton.setOnClickListener { showQrCode() }
+
+        zoomInButton.setOnClickListener {
+            googleMap?.let { map ->
+                map.animateCamera(
+                    CameraUpdateFactory.zoomTo((map.cameraPosition.zoom.roundToInt() + 1).toFloat())
+                )
+            }
+        }
+
+        zoomOutButton.setOnClickListener {
+            googleMap?.let { map ->
+                map.animateCamera(
+                    CameraUpdateFactory.zoomTo((map.cameraPosition.zoom.roundToInt() - 1).toFloat())
+                )
+            }
+        }
+
+        myLocationButton.setOnClickListener {
+            LocationUpdateManager.getLastLocation()?.let { location ->
+                googleMap?.animateCamera(
+                    CameraUpdateFactory.newLatLng(LatLng(location.latitude, location.longitude))
+                )
+            }
+        }
     }
 
-    override fun onMapReady(map: GoogleMap?) {
+    override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        LocationUpdateManager.registerCallback { location ->
-            loadTracks(location)
-            loadDiagnosticKeys(location)
 
+        map.uiSettings.isMapToolbarEnabled = false
+        map.uiSettings.isMyLocationButtonEnabled = false
+        map.uiSettings.isIndoorLevelPickerEnabled = false
+        map.uiSettings.isCompassEnabled = true
+
+        LocationUpdateManager.registerCallback { location ->
             activity?.runOnUiThread {
-                map?.moveCamera(
+                map.moveCamera(
                     CameraUpdateFactory.newCameraPosition(
                         CameraPosition.Builder()
                             .target(LatLng(location.latitude, location.longitude))
@@ -91,14 +113,22 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                             .build()
                     )
                 )
-                map?.isMyLocationEnabled = true
+                map.isMyLocationEnabled = true
             }
         }
+
+        updateContacts()
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onUpdateUserTracksEvent(event: UpdateUserTracksEvent) {
         updateUserTracks()
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onUpdateUserTracksEvent(event: UpdateLocationAccuracyEvent) {
+        accuracyText.text = getString(R.string.accuracy_text, event.accuracy)
+        accuracyText.visibility = VISIBLE
     }
 
     private fun updateUserTracks() {
@@ -116,12 +146,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     .clickable(true)
                     .addAll(it)
             )?.let { polyline ->
-                polyline.color = userPolylineColor
+                polyline.color = ContextCompat.getColor(requireActivity(), R.color.colorPrimary)
                 userPolylines.add(polyline)
             }
-
         }
-
     }
 
     private fun updateExtTracks() {
@@ -146,7 +174,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     .clickable(true)
                     .addAll(it)
             )?.let { polyline ->
-                polyline.color = sickPolylineColor
+                polyline.color = ContextCompat.getColor(requireActivity(), R.color.red)
                 this.sickPolylines.add(polyline)
             }
         }
@@ -200,9 +228,26 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     }
 
     fun updateContacts() {
-
-        mkContactPoints.keys.forEach { it.remove() }
+        mkContactPoints.forEach { it.remove() }
         mkContactPoints.clear()
+
+        BtContactsManager.getContacts().values.forEach { contact ->
+            contact.encounters.forEach { encounter ->
+                ifAllNotNull(encounter.metaData, encounter.metaData?.coord) { metaData, coord ->
+                    googleMap?.addMarker(
+                        MarkerOptions().position(coord.coordinate())
+                            .title(
+                                getString(
+                                    R.string.contact_at_date,
+                                    metaData.date.dateFullFormat()
+                                )
+                            )
+                    )?.let {
+                        mkContactPoints.add(it)
+                    }
+                }
+            }
+        }
 
         QrContactsManager.getContacts().forEach { contact ->
             ifAllNotNull(contact.metaData, contact.metaData?.coord) { metaData, coord ->
@@ -210,11 +255,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     MarkerOptions().position(coord.coordinate())
                         .title(getString(R.string.contact_at_date, metaData.date.dateFullFormat()))
                 )?.let {
-                    mkContactPoints[it] = contact
+                    mkContactPoints.add(it)
                 }
             }
         }
-
     }
 
     fun goToContact(coord: ContactCoord) {
@@ -238,6 +282,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     override fun onResume() {
         super.onResume()
         updateUserTracks()
+
+        LocationUpdateManager.registerCallback { location ->
+            loadTracks(location)
+            loadDiagnosticKeys(location)
+        }
+
         mapView.onResume()
     }
 
@@ -271,9 +321,15 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         mapView.onSaveInstanceState(outState)
     }
 
-    override fun onDestroy() {
+    override fun onDestroyView() {
         EventBus.getDefault().unregister(this)
+
+        super.onDestroyView()
+    }
+
+    override fun onDestroy() {
         mapView.onDestroy()
+
         super.onDestroy()
     }
 
@@ -289,7 +345,6 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             border.minLng,
             border.maxLng
         ).enqueue(object : Callback<TracksData> {
-
             override fun onResponse(call: Call<TracksData>, response: Response<TracksData>) {
                 response.body()?.tracks?.let { tracks ->
                     LocationIndexManager.updateTracksIndex(index)
@@ -312,7 +367,10 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     }
 
                     TracksManager.addTracks(tracksFiltered)
-                    updateExtTracks()
+
+                    activity?.runOnUiThread {
+                        updateExtTracks()
+                    }
                 }
             }
 
@@ -334,7 +392,6 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             border.minLng,
             border.maxLng
         ).enqueue(object : Callback<KeysData> {
-
             override fun onResponse(call: Call<KeysData>, response: Response<KeysData>) {
                 response.body()?.let { data ->
                     LocationIndexManager.updateKeysIndex(index)
@@ -360,7 +417,6 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                         goToContact(it)
                         updateContacts()
                     }
-
                 }
             }
 
@@ -371,7 +427,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun showExposedNotification() {
-        toast(R.string.exposed_contact_message)
+        showInfo(R.string.exposed_contact_message)
     }
 
 }

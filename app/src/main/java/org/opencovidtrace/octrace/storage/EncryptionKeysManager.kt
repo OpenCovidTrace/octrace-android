@@ -28,7 +28,7 @@ object EncryptionKeysManager : PreferencesHolder("encryption-keys") {
     }
 
     fun generateKey(tst: Long) : ByteArray {
-        val key = CryptoUtil.generateKey(16)
+        val key = CryptoUtil.generateKey()
 
         val newKeys = getEncryptionKeys()
         newKeys[tst] = key

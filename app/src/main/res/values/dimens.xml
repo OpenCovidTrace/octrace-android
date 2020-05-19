@@ -1,9 +1,19 @@
 <resources>
     <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="margin_big">32dp</dimen>
     <dimen name="margin_regular">16dp</dimen>
+    <dimen name="margin_small">8dp</dimen>
 
     <dimen name="input_height">44dp</dimen>
+    <dimen name="map_input_size">40dp</dimen>
+
     <!-- Bottom sheet-->
     <dimen name="sheet_rounded_corner">16dp</dimen>
-    <dimen name="button_rounded_corner">10dp</dimen>
+    <dimen name="button_rounded_corner">8dp</dimen>
+
+    <!-- Text-->
+    <dimen name="text_title">24sp</dimen>
+    <dimen name="text_header">21sp</dimen>
+    <dimen name="text_normal">18sp</dimen>
+
 </resources>

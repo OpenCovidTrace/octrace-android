@@ -71,6 +71,10 @@ object TracksManager : PreferencesHolder("tracks") {
             }
         }
 
+        if (tracksByDay.isEmpty()) {
+            return
+        }
+
         val tracksData = TracksData(tracks = tracksByDay.values.toList())
 
         apiClient.sendTracks(tracksData)

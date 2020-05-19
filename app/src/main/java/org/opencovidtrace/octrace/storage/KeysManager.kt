@@ -13,7 +13,6 @@ import kotlin.math.min
 object KeysManager : PreferencesHolder("keys") {
 
     private const val LAST_UPLOAD_DAY = "lastUploadDay"
-    private const val DISCLOSE_META_DATA = "discloseMetaData"
     private const val DAILY_KEYS = "dailyKeys"
     private const val META_KEYS = "metaKeys"
 
@@ -51,14 +50,6 @@ object KeysManager : PreferencesHolder("keys") {
         setInt(LAST_UPLOAD_DAY, value)
     }
 
-    private fun isDiscloseMetaData(): Boolean {
-        return getBoolean(DISCLOSE_META_DATA)
-    }
-
-    fun setDiscloseMetaData(value: Boolean) {
-        setBoolean(DISCLOSE_META_DATA, value)
-    }
-
     fun uploadNewKeys(includeToday: Boolean = false) {
         val oldLastUploadDay = getLastUploadDay()
 
@@ -80,7 +71,7 @@ object KeysManager : PreferencesHolder("keys") {
                 border.secure()
 
                 val dailyKey = getDailyKeys()[dayNumber]!!.base64EncodedString()
-                val meta = if (isDiscloseMetaData()) {
+                val meta = if (UserSettingsManager.discloseMetaData) {
                     getMetaKeys()[dayNumber]!!.base64EncodedString()
                 } else {
                     null

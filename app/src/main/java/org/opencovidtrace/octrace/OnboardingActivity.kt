@@ -12,6 +12,7 @@ import org.opencovidtrace.octrace.MainActivity.Companion.REQUEST_LOCATION
 import org.opencovidtrace.octrace.OnboardingActivity.Extra.STAGE_EXTRA
 import org.opencovidtrace.octrace.storage.OnboardingManager
 import org.opencovidtrace.octrace.storage.OnboardingStage
+import org.opencovidtrace.octrace.storage.UserSettingsManager
 
 class OnboardingActivity : AppCompatActivity() {
 
@@ -49,11 +50,15 @@ class OnboardingActivity : AppCompatActivity() {
 
                     goNext(OnboardingStage.LOCATION)
                 }
-                OnboardingStage.LOCATION -> ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(permission.ACCESS_FINE_LOCATION),
-                    REQUEST_LOCATION
-                )
+                OnboardingStage.LOCATION -> {
+                    UserSettingsManager.recordTrack = true
+
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(permission.ACCESS_FINE_LOCATION),
+                        REQUEST_LOCATION
+                    )
+                }
             }
         }
     }

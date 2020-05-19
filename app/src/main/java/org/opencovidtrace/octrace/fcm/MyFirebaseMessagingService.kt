@@ -8,6 +8,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.media.RingtoneManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -28,6 +29,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     companion object {
         const val UPDATES_CHANNEL_ID = "UPDATES_CHANNEL_ID"
+
+        private const val TAG = "FIREBASE"
     }
 
     private lateinit var notificationManager: NotificationManager
@@ -52,7 +55,15 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+
+        Log.d(TAG, "New token: $token")
+    }
+
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        Log.d(TAG, "Message received: ${remoteMessage.data}")
+
         val data = remoteMessage.data
 
         if (data["type"] == "MAKE_CONTACT") {
@@ -64,11 +75,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
                     val rollingId =
                         CryptoUtil.decodeAES(
-                            secretData.sliceArray(0 until CryptoUtil.keyLength),
+                            secretData.sliceArray(0 until CryptoUtil.KEY_LENGTH),
                             key
                         )
                     val meta = CryptoUtil.decodeAES(
-                        secretData.sliceArray(CryptoUtil.keyLength until CryptoUtil.keyLength * 2),
+                        secretData.sliceArray(CryptoUtil.KEY_LENGTH until CryptoUtil.KEY_LENGTH * 2),
                         key
                     )
 
@@ -78,11 +89,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
                     if (EventBus.getDefault().hasSubscriberForEvent(MakeContactEvent::class.java))
                         EventBus.getDefault().post(MakeContactEvent())
+
+                    info(getString(R.string.contact_added))
                 }
             }
         }
     }
-
 
     private fun info(message: String) {
         val intentOpen = Intent(this, MainActivity::class.java)
@@ -100,7 +112,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             UPDATES_CHANNEL_ID
         )
             .setAutoCancel(true)
-            // TODO .setSmallIcon(R.drawable.ic_icon_24dp)
+            .setSmallIcon(R.drawable.ic_icon_24dp)
             .setLargeIcon(BitmapFactory.decodeResource(resources, R.mipmap.ic_launcher))
             .setContentTitle(getString(R.string.app_name))
             .setContentText(message)

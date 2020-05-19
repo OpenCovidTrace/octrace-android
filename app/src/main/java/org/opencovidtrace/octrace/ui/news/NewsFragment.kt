@@ -9,14 +9,15 @@ import android.webkit.WebViewClient
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import kotlinx.android.synthetic.main.fragment_news.*
-import org.opencovidtrace.octrace.BuildConfig
+import org.opencovidtrace.octrace.OctraceApp.Companion.API_HOST
 import org.opencovidtrace.octrace.R
 
 class NewsFragment : Fragment() {
 
-    companion object{
-        private const val NEWS_ENDPOINT = "https://${BuildConfig.API_BASE_URL}newsroom.html?from=app"
+    companion object {
+        private const val NEWS_ENDPOINT = "https://$API_HOST/newsroom.html?from=app"
     }
+
     private lateinit var newsViewModel: NewsViewModel
 
     override fun onCreateView(

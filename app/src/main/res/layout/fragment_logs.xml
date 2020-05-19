@@ -5,15 +5,12 @@
     android:id="@+id/bottomSheet"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#fff"
     android:orientation="vertical">
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#ccc"
-        android:paddingTop="4dp">
-
+        android:background="@color/colorPrimary">
 
         <ImageButton
             android:id="@+id/closeImageButton"
@@ -23,7 +20,8 @@
             android:layout_gravity="start|center_vertical"
             android:contentDescription="@string/close"
             android:padding="8dp"
-            android:src="@drawable/ic_close_black_24dp" />
+            android:src="@drawable/ic_close_black_24dp"
+            android:tint="@android:color/white" />
 
         <ImageButton
             android:id="@+id/clearImageButton"
@@ -33,7 +31,8 @@
             android:layout_gravity="end|center_vertical"
             android:contentDescription="@string/clear"
             android:padding="8dp"
-            android:src="@drawable/ic_delete_black_24dp" />
+            android:src="@drawable/ic_delete_black_24dp"
+            android:tint="@android:color/white" />
     </FrameLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -42,7 +41,7 @@
         android:layout_height="wrap_content"
         android:clipToPadding="false"
         android:orientation="vertical"
-        android:padding="16dp"
+        android:padding="@dimen/margin_small"
         android:scrollbars="vertical"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"

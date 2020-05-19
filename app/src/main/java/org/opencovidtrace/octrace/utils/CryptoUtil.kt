@@ -14,17 +14,20 @@ import java.util.*
 
 object CryptoUtil {
 
-    const val keyLength = 16
+    const val KEY_LENGTH = 16
 
-    private const val daySeconds = 60 * 60 * 24
-    private const val enIntervalSeconds = 60 * 10
-    private const val coordPrecision = 1e7
+    private const val INT_BYTES = 4
+    private const val DAY_SECONDS = 60 * 60 * 24
+    private const val EN_INTERVAL_SECONDS = 60 * 10
+    private const val COORD_PRECISION = 1e7
+
     private val info = "EN-RPIK".toByteArray()
     private val rpiPrefix = "EN-RPI".toByteArray()
     private val hkdf = HKDF.fromHmacSha256()
     private val digest = MessageDigest.getInstance("SHA-256")
 
     private val random = SecureRandom()
+
 
     // MARK: - AES 128bit
 
@@ -33,8 +36,11 @@ object CryptoUtil {
     fun decodeAES(value: ByteArray, key: ByteArray) = AESEncryptor.decryptWithAES(value, key)!!
 
 
-    fun generateKey(size: Int): ByteArray {
-        val bytes = ByteArray(size)
+    // MARK: - Apple/Google crypto spec:
+    // https://covid19-static.cdn-apple.com/applications/covid19/current/static/contact-tracing/pdf/ExposureNotification-CryptographySpecificationv1.2.pdf
+
+    fun generateKey(): ByteArray {
+        val bytes = ByteArray(KEY_LENGTH)
 
         random.nextBytes(bytes)
 
@@ -62,18 +68,16 @@ object CryptoUtil {
         return Pair(getRollingId(dailyKey, date), getMetaData(date, metaKey))
     }
 
-    fun getDayNumber(tst: Long) = ((tst / 1000) / daySeconds).toInt()
+    fun getDayNumber(tst: Long) = ((tst / 1000) / DAY_SECONDS).toInt()
 
     fun getDayNumber(date: Date) = getDayNumber(date.time)
 
-    fun currentDayNumber() = (getTimestamp() / daySeconds).toInt()
+    fun currentDayNumber() = ((System.currentTimeMillis() / 1000) / DAY_SECONDS).toInt()
 
     private fun getEnIntervalNumber(date: Date) =
         getEnIntervalNumber((date.time / 1000).toInt())
 
-    private fun getEnIntervalNumber(timeInterval: Int): Int = timeInterval / enIntervalSeconds
-
-    private fun getTimestamp() = System.currentTimeMillis() / 1000
+    private fun getEnIntervalNumber(timeInterval: Int): Int = timeInterval / EN_INTERVAL_SECONDS
 
     fun getDailyKeys(dayNumber: Int): Pair<ByteArray, ByteArray> {
         val dailyKeys = KeysManager.getDailyKeys()
@@ -85,8 +89,8 @@ object CryptoUtil {
             }
         }
 
-        val dailyKey = generateKey(32)
-        val metaKey = generateKey(32)
+        val dailyKey = generateKey()
+        val metaKey = generateKey()
 
         dailyKeys[dayNumber] = dailyKey
         metaKeys[dayNumber] = metaKey
@@ -97,7 +101,7 @@ object CryptoUtil {
         return Pair(dailyKey, metaKey)
     }
 
-    fun getMetaData(date: Date, metaKey: ByteArray): ByteArray {
+    private fun getMetaData(date: Date, metaKey: ByteArray): ByteArray {
         val timeInterval = (date.time / 1000).toInt()
 
         var data = intToBytes(timeInterval)
@@ -122,15 +126,15 @@ object CryptoUtil {
     fun decodeMetaData(encryptedData: ByteArray, metaKey: ByteArray): ContactMetaData {
         val data = decodeAES(encryptedData, getEncryptionKey(metaKey))
 
-        val timeInterval = bytesToInt(data.sliceArray(0..7))
+        val timeInterval = bytesToInt(data.sliceArray(0..3))
         val date = Date(timeInterval.toLong() * 1000)
 
         var coord: ContactCoord? = null
 
-        val latInt = bytesToInt(data.sliceArray(8..15))
+        val latInt = bytesToInt(data.sliceArray(4..7))
         if (latInt != Int.MAX_VALUE) {
-            val lngInt = bytesToInt(data.sliceArray(16..23))
-            val accuracy = bytesToInt(data.sliceArray(24..31))
+            val lngInt = bytesToInt(data.sliceArray(8..11))
+            val accuracy = bytesToInt(data.sliceArray(12..15))
 
             coord = ContactCoord(coordToDouble(latInt), coordToDouble(lngInt), accuracy)
         }
@@ -139,36 +143,42 @@ object CryptoUtil {
     }
 
     private fun coordToInt(value: Double): Int {
-        return (value * coordPrecision).toInt()
+        return (value * COORD_PRECISION).toInt()
     }
 
     private fun coordToDouble(value: Int): Double {
-        return value.toDouble() / coordPrecision
+        return value.toDouble() / COORD_PRECISION
     }
 
     private fun bytesToInt(bytes: ByteArray): Int {
         var value = 0
 
-        bytes.forEach { byte ->
+        var ind = 0
+        while (ind < INT_BYTES) {
+            val byte = bytes[INT_BYTES - ind - 1].toInt() and 0xFF
             value = value shl 8
-            value = value or byte.toInt()
+            value = value or byte
+            ind++
         }
 
         return value
     }
 
     private fun intToBytes(value: Int) =
-        ByteBuffer.allocate(4).putInt(Integer.reverseBytes(value)).array()
+        ByteBuffer.allocate(INT_BYTES).putInt(Integer.reverseBytes(value)).array()
 
-    fun getRollingId(dailyKey: ByteArray, date: Date): ByteArray {
-        return getRollingId(dailyKey, getEnIntervalNumber(date))
+    private fun getRollingId(dailyKey: ByteArray, date: Date): ByteArray {
+        val rpiKey = getEncryptionKey(dailyKey)
+        val enIntervalNumber = getEnIntervalNumber(date)
+
+        return getRollingId(rpiKey, enIntervalNumber)
     }
 
     fun match(rollingId: String, dayNumber: Int, dailyKey: ByteArray): Boolean {
         val rpiKey = getEncryptionKey(dailyKey)
 
-        val firstEnIntervalNumber = getEnIntervalNumber(dayNumber * daySeconds)
-        val nextDayEnIntervalNumber = getEnIntervalNumber((dayNumber + 1) * daySeconds)
+        val firstEnIntervalNumber = getEnIntervalNumber(dayNumber * DAY_SECONDS)
+        val nextDayEnIntervalNumber = getEnIntervalNumber((dayNumber + 1) * DAY_SECONDS)
 
         for (enIntervalNumber in firstEnIntervalNumber until nextDayEnIntervalNumber) {
             if (rollingId == getRollingId(rpiKey, enIntervalNumber).base64EncodedString()) {
@@ -179,28 +189,28 @@ object CryptoUtil {
         return false
     }
 
-    fun getLatestDailyKeys(): List<ByteArray> {
+    private fun getLatestDailyKeys(): List<ByteArray> {
         val lastDayNumber = currentDayNumber() - DataManager.maxDays
 
         return KeysManager.getDailyKeys().filterKeys { it > lastDayNumber }.values.toList()
     }
 
-    private fun getRollingId(dailyKey: ByteArray, enIntervalNumber: Int): ByteArray {
-        val rpiKey = getEncryptionKey(dailyKey)
+    private fun getRollingId(rpiKey: ByteArray, enIntervalNumber: Int): ByteArray {
         var paddedData = rpiPrefix
         for (i in 6..11) {
             paddedData += 0
         }
         val eninBytes = intToBytes(enIntervalNumber)
         paddedData += eninBytes
+
         return encodeAES(paddedData, rpiKey)
     }
 
     private fun getEncryptionKey(key: ByteArray): ByteArray =
-        hkdf.extractAndExpand(byteArrayOf(), key, info, keyLength)
+        hkdf.extractAndExpand(byteArrayOf(), key, info, KEY_LENGTH)
 
 
-    fun ByteArray.base64EncodedString(): String = Base64.encodeToString(this, Base64.NO_WRAP or Base64.URL_SAFE)
+    fun ByteArray.base64EncodedString(): String = Base64.encodeToString(this, Base64.NO_WRAP)
 
-    fun String.base64DecodeByteArray(): ByteArray = Base64.decode(this, Base64.NO_WRAP or Base64.URL_SAFE)
+    fun String.base64DecodeByteArray(): ByteArray = Base64.decode(this, Base64.NO_WRAP)
 }

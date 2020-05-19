@@ -2,6 +2,7 @@ package org.opencovidtrace.octrace.location
 
 import android.location.Location
 import org.greenrobot.eventbus.EventBus
+import org.opencovidtrace.octrace.data.UpdateLocationAccuracyEvent
 import org.opencovidtrace.octrace.data.UpdateUserTracksEvent
 import org.opencovidtrace.octrace.storage.*
 import org.opencovidtrace.octrace.storage.TrackingManager.trackingIntervalMs
@@ -20,9 +21,15 @@ object LocationUpdateManager {
         callbacks.forEach { callback -> callback(location) }
         callbacks.clear()
 
+        if (EventBus.getDefault().hasSubscriberForEvent(UpdateLocationAccuracyEvent::class.java)) {
+            EventBus.getDefault().post(UpdateLocationAccuracyEvent(location.accuracy.toInt()))
+        }
+
         val now = System.currentTimeMillis()
-        if (now - lastTrackingUpdate > trackingIntervalMs &&
-            location.accuracy > 0 && location.accuracy < 30
+        if (
+            now - lastTrackingUpdate > trackingIntervalMs &&
+            location.accuracy > 0 && location.accuracy < 30 &&
+            UserSettingsManager.recordTrack
         ) {
             println("Updating tracking location")
 
@@ -30,12 +37,13 @@ object LocationUpdateManager {
 
             TrackingManager.addTrackingPoint(point)
 
-            if (EventBus.getDefault().hasSubscriberForEvent(UpdateUserTracksEvent::class.java))
+            if (EventBus.getDefault().hasSubscriberForEvent(UpdateUserTracksEvent::class.java)) {
                 EventBus.getDefault().post(UpdateUserTracksEvent())
+            }
 
             lastTrackingUpdate = now
 
-            if (UserStatusManager.sick()) {
+            if (UserSettingsManager.uploadTrack) {
                 TracksManager.uploadNewTracks()
             }
         }

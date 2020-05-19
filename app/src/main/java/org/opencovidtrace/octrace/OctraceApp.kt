@@ -8,6 +8,10 @@ import org.opencovidtrace.octrace.di.ContextProvider
 
 class OctraceApp : Application() {
 
+    companion object {
+        const val API_HOST = "dev.openexposuretrace.org"
+    }
+
     init {
         ContextProvider.inject { applicationContext }
         BluetoothManagerProvider.inject { DeviceManager(applicationContext) }
@@ -17,4 +21,5 @@ class OctraceApp : Application() {
         super.onCreate()
         FirebaseApp.initializeApp(applicationContext)
     }
+
 }

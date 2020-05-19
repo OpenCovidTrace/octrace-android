@@ -21,7 +21,6 @@ class QrCodeFragment : SuperBottomSheetFragment() {
 
     private lateinit var qrCodeViewModel: QrCodeViewModel
 
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -60,8 +59,9 @@ class QrCodeFragment : SuperBottomSheetFragment() {
     else
         showError(R.string.failed_generate_qr)
 
-    override fun onDestroy() {
+    override fun onDestroyView() {
         EventBus.getDefault().unregister(this)
-        super.onDestroy()
+
+        super.onDestroyView()
     }
 }

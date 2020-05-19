@@ -28,17 +28,28 @@ fun Fragment.confirm(@StringRes messageId: Int, onOkClick: () -> Unit) {
     activity?.confirm(getString(messageId), onOkClick)
 }
 
-fun Activity.confirm(@StringRes messageId: Int, onOkClick: () -> Unit) {
-    confirm(getString(messageId), onOkClick)
-}
-
 fun Activity.confirm(message: String, onOkClick: () -> Unit) {
     AlertDialog.Builder(this).apply {
-        setTitle(R.string.app_name)
+        setTitle(R.string.please_confirm)
         setMessage(message)
         setCancelable(false)
         setPositiveButton(R.string.ok) { _, _ -> onOkClick() }
             .setNegativeButton(R.string.cancel) { _, _ -> }
+        show()
+    }
+}
+
+fun Fragment.choose(@StringRes messageId: Int, onYesClick: () -> Unit, onNoClick: () -> Unit) {
+    activity?.choose(messageId, onYesClick, onNoClick)
+}
+
+fun Activity.choose(@StringRes messageId: Int, onYesClick: () -> Unit, onNoClick: () -> Unit) {
+    AlertDialog.Builder(this).apply {
+        setTitle(R.string.make_choice)
+        setMessage(getString(messageId))
+        setCancelable(false)
+        setPositiveButton(R.string.yes) { _, _ -> onYesClick() }
+            .setNegativeButton(R.string.no) { _, _ -> onNoClick() }
         show()
     }
 }

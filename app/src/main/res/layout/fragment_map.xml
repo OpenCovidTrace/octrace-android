@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -14,31 +15,80 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <ImageButton
-        android:id="@+id/logsImageButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:id="@+id/myLocationButton"
+        android:layout_width="@dimen/map_input_size"
+        android:layout_height="@dimen/map_input_size"
+        android:layout_marginStart="@dimen/margin_regular"
+        android:layout_marginBottom="@dimen/margin_big"
+        android:background="@drawable/bg_primary_button"
         android:contentDescription="@string/logs"
-        android:src="@drawable/ic_bluetooth_black_24dp"
-        app:layout_constraintBottom_toTopOf="@id/recordContactButton"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:src="@drawable/ic_near_me_black_24dp"
+        android:tint="@android:color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageButton
+        android:id="@+id/zoomOutButton"
+        android:layout_width="@dimen/map_input_size"
+        android:layout_height="@dimen/map_input_size"
+        android:layout_marginBottom="@dimen/margin_regular"
+        android:background="@drawable/bg_secondary_button"
+        android:contentDescription="@string/logs"
+        android:src="@drawable/ic_remove_black_24dp"
+        app:layout_constraintBottom_toTopOf="@id/myLocationButton"
+        app:layout_constraintStart_toStartOf="@id/myLocationButton" />
+
+    <ImageButton
+        android:id="@+id/zoomInButton"
+        android:layout_width="@dimen/map_input_size"
+        android:layout_height="@dimen/map_input_size"
+        android:layout_marginBottom="@dimen/margin_small"
+        android:background="@drawable/bg_secondary_button"
+        android:contentDescription="@string/logs"
+        android:src="@drawable/ic_add_black_24dp"
+        app:layout_constraintBottom_toTopOf="@id/zoomOutButton"
+        app:layout_constraintStart_toStartOf="@id/myLocationButton" />
 
     <Button
         android:id="@+id/recordContactButton"
         style="?android:attr/borderlessButtonStyle"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/input_height"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/map_input_size"
         android:layout_marginStart="@dimen/margin_regular"
         android:layout_marginEnd="@dimen/margin_regular"
-        android:layout_marginBottom="26dp"
-        android:background="@drawable/bg_rounded_red_button"
+        android:background="@drawable/bg_red_button"
         android:text="@string/record_contact"
         android:textAlignment="center"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:textSize="@dimen/text_normal"
+        app:layout_constraintBottom_toBottomOf="@id/myLocationButton"
+        app:layout_constraintEnd_toStartOf="@id/logsButton"
+        app:layout_constraintStart_toEndOf="@id/myLocationButton" />
+
+    <TextView
+        android:id="@+id/accuracyText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="14sp"
+        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/recordContactButton" />
+
+    <ImageButton
+        android:id="@+id/logsButton"
+        android:layout_width="@dimen/map_input_size"
+        android:layout_height="@dimen/map_input_size"
+        android:layout_marginEnd="@dimen/margin_regular"
+        android:background="@drawable/bg_secondary_button"
+        android:contentDescription="@string/logs"
+        android:src="@drawable/ic_bluetooth_black_24dp"
+        android:tint="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="@id/recordContactButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/recordContactButton" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -17,7 +17,6 @@ class LogsFragment : SuperBottomSheetFragment() {
     private lateinit var logsViewModel: LogsViewModel
     private val logsAdapter = LogsAdapter()
 
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -32,7 +31,6 @@ class LogsFragment : SuperBottomSheetFragment() {
     override fun getCornerRadius() = resources.getDimension(R.dimen.sheet_rounded_corner)
 
     override fun animateCornerRadius() = false
-
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

@@ -21,4 +21,4 @@ object OnboardingManager : PreferencesHolder("onboarding") {
 
 }
 
-enum class OnboardingStage { WELCOME, BLUETOOTH, LOCATION, NOTIFICATIONS, COMPLETE }
+enum class OnboardingStage { WELCOME, LOCATION, COMPLETE }

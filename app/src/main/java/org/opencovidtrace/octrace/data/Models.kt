@@ -1,6 +1,5 @@
 package org.opencovidtrace.octrace.data
 
-import android.bluetooth.BluetoothDevice
 import android.location.Location
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -13,8 +12,6 @@ import kotlin.math.roundToInt
 const val ADV_TAG = "ADV"
 const val SCAN_TAG = "SCAN"
 
-data class ConnectedDevice(val device: BluetoothDevice, val rssi: Int)
-
 @Entity(tableName = "log_table")
 data class LogTableValue(
     val tag: String,
@@ -22,9 +19,7 @@ data class LogTableValue(
     val time: Date = Date(),
     @PrimaryKey(autoGenerate = true) var id: Int? = null
 ) {
-    fun getLogValue() = text
-
-    fun getTimeWithTag() = time.dateFullFormat() + " - <$tag>"
+    fun getLog() = "${time.dateFullFormat()} <$tag> $text"
 }
 
 

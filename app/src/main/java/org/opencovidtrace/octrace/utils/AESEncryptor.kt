@@ -9,11 +9,10 @@ import javax.crypto.spec.SecretKeySpec
 
 
 object AESEncryptor {
-    private const val cipherInstance ="AES/ECB/NoPadding"
+    private const val cipherInstance = "AES/ECB/NoPadding"
 
     @SuppressLint("GetInstance")
     fun encrypt(input: ByteArray, keyBytes: ByteArray): ByteArray? {
-
         try {
             val skey = SecretKeySpec(keyBytes, "AES")
 
@@ -42,19 +41,14 @@ object AESEncryptor {
     }
 
     @SuppressLint("GetInstance")
-    fun decryptWithAES(bytesToDecrypt: ByteArray, keyBytes: ByteArray): ByteArray? {
+    fun decryptWithAES(input: ByteArray, keyBytes: ByteArray): ByteArray? {
         try {
             val skey = SecretKeySpec(keyBytes, "AES")
 
             synchronized(Cipher::class.java) {
                 val cipher = Cipher.getInstance(cipherInstance)
                 cipher.init(Cipher.DECRYPT_MODE, skey)
-
-                val plainText = ByteArray(cipher.getOutputSize(bytesToDecrypt.size))
-                var ptLength = cipher.update(bytesToDecrypt, 0, bytesToDecrypt.size, plainText, 0)
-                ptLength += cipher.doFinal(plainText, ptLength)
-                val decryptedString = String(plainText)
-                return decryptedString.trim { it <= ' ' }.toByteArray()
+                return cipher.doFinal(input)
             }
         } catch (uee: UnsupportedEncodingException) {
             uee.printStackTrace()
