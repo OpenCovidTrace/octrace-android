@@ -21,7 +21,7 @@ object TracksManager : PreferencesHolder("tracks") {
         } ?: kotlin.run { return arrayListOf() }
     }
 
-    fun setTracks(newValue: List<Track>) {
+    private fun setTracks(newValue: List<Track>) {
         val hashMapString = Gson().toJson(newValue)
         OnboardingManager.setString(TRACKS, hashMapString)
     }
@@ -29,7 +29,9 @@ object TracksManager : PreferencesHolder("tracks") {
     fun removeOldTracks() {
         val lastDay = CryptoUtil.currentDayNumber() - 14
 
-        val newTracks = getTracks().filter { it.day > lastDay }
+        val newTracks = getTracks().filter {
+            it.day > lastDay
+        }
 
         setTracks(newTracks)
     }

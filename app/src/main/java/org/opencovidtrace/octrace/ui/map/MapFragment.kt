@@ -117,6 +117,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             }
         }
 
+        updateExtTracks()
         updateContacts()
     }
 
