@@ -183,6 +183,8 @@ class MainActivity : AppCompatActivity() {
         stopTrackingService()
 
         unregisterReceiver(broadcastReceiver)
+
+        DP3T.stop(this)
     }
 
     override fun onRequestPermissionsResult(
