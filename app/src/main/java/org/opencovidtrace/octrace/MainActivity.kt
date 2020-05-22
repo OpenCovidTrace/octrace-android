@@ -114,7 +114,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        registerReceiver(broadcastReceiver, DP3T.getUpdateIntentFilter());
+        registerReceiver(broadcastReceiver, DP3T.getUpdateIntentFilter())
 
         handleDeepLink()
     }
@@ -241,8 +241,9 @@ class MainActivity : AppCompatActivity() {
     private fun requestEnableTracking() {
         checkLocationSettings(
             TrackingService.TRACKING_LOCATION_REQUEST_BUILDER,
-            REQUEST_CHECK_TRACKING_SETTINGS,
-            Runnable { this.enableTracking() },
+            Runnable {
+                enableTracking()
+            },
             Runnable {
                 Toast.makeText(this, R.string.location_disabled, LENGTH_LONG).show()
             }
@@ -254,14 +255,15 @@ class MainActivity : AppCompatActivity() {
      */
     private fun checkLocationSettings(
         requestBuilder: LocationSettingsRequest.Builder,
-        request: Int,
         onSuccess: Runnable,
         onFailure: Runnable?
     ) {
         val client = LocationServices.getSettingsClient(this)
         val task =
             client.checkLocationSettings(requestBuilder.build())
-        task.addOnSuccessListener(this) { onSuccess.run() }
+        task.addOnSuccessListener(this) {
+            onSuccess.run()
+        }
         task.addOnFailureListener(this) { e ->
             if (e is ResolvableApiException) {
                 // StaticLocation settings are not satisfied, but this can be fixed
@@ -269,7 +271,7 @@ class MainActivity : AppCompatActivity() {
                 try {
                     // Show the dialog by calling startResolutionForResult(),
                     // and check the result in onActivityResult().
-                    e.startResolutionForResult(this@MainActivity, request)
+                    e.startResolutionForResult(this@MainActivity, REQUEST_CHECK_TRACKING_SETTINGS)
                 } catch (sendEx: SendIntentException) {
                     // Ignore the error.
                 }
@@ -397,7 +399,6 @@ class MainActivity : AppCompatActivity() {
                 override fun onFailure(call: Call<Void>, t: Throwable) {
                     t.message?.let { showError(it) }
                 }
-
             })
     }
 
