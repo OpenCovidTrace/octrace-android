@@ -11,7 +11,6 @@ import org.opencovidtrace.octrace.ui.base.BaseViewHolder
 
 class LogsAdapter : BaseAdapter<LogTableValue, LogsAdapter.ViewHolder>() {
 
-
     override fun getItemViewType(position: Int): Int {
         return R.layout.list_item_log
     }
@@ -29,7 +28,5 @@ class LogsAdapter : BaseAdapter<LogTableValue, LogsAdapter.ViewHolder>() {
             }
         }
     }
+
 }
-
-
-

@@ -20,7 +20,6 @@ import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import org.opencovidtrace.octrace.R
 import org.opencovidtrace.octrace.data.ContactCoord
-import org.opencovidtrace.octrace.data.LocationIndex
 import org.opencovidtrace.octrace.data.UpdateLocationAccuracyEvent
 import org.opencovidtrace.octrace.data.UpdateUserTracksEvent
 import org.opencovidtrace.octrace.di.api.ApiClientProvider
@@ -29,7 +28,8 @@ import org.opencovidtrace.octrace.ext.text.dateFullFormat
 import org.opencovidtrace.octrace.ext.ui.showInfo
 import org.opencovidtrace.octrace.location.LocationUpdateManager
 import org.opencovidtrace.octrace.storage.*
-import org.opencovidtrace.octrace.ui.map.logs.LogsFragment
+import org.opencovidtrace.octrace.ui.map.logs.BtLogsFragment
+import org.opencovidtrace.octrace.ui.map.logs.Dp3tLogsFragment
 import org.opencovidtrace.octrace.ui.map.qrcode.QrCodeFragment
 import org.opencovidtrace.octrace.utils.CryptoUtil
 import retrofit2.Call
@@ -67,7 +67,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         EventBus.getDefault().register(this)
-        logsButton.setOnClickListener { showLogs() }
+        btLogsButton.setOnClickListener { showBtLogs() }
+        dp3tLogsButton.setOnClickListener { showDp3tLogs() }
         recordContactButton.setOnClickListener { showQrCode() }
 
         zoomInButton.setOnClickListener {
@@ -147,7 +148,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     .clickable(true)
                     .addAll(it)
             )?.let { polyline ->
-                polyline.color = ContextCompat.getColor(requireActivity(), R.color.colorPrimary)
+                polyline.color = ContextCompat.getColor(requireActivity(), R.color.colorAccent)
                 userPolylines.add(polyline)
             }
         }
@@ -270,8 +271,13 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
     }
 
-    private fun showLogs() {
-        val dialog = LogsFragment()
+    private fun showBtLogs() {
+        val dialog = BtLogsFragment()
+        dialog.show(childFragmentManager, dialog.tag)
+    }
+
+    private fun showDp3tLogs() {
+        val dialog = Dp3tLogsFragment()
         dialog.show(childFragmentManager, dialog.tag)
     }
 

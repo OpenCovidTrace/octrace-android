@@ -2,7 +2,6 @@ package org.opencovidtrace.octrace.storage
 
 import android.location.Location
 import com.google.gson.Gson
-import org.opencovidtrace.octrace.data.LocationIndex
 import org.opencovidtrace.octrace.utils.CryptoUtil
 import kotlin.math.max
 import kotlin.math.min
@@ -33,7 +32,7 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
 
         oldBorders.keys.forEach { dayNumber ->
             if (dayNumber > lastDay) {
-                oldBorders[dayNumber]?.let {  newBorders[dayNumber] = it }
+                oldBorders[dayNumber]?.let { newBorders[dayNumber] = it }
             }
         }
 
@@ -45,9 +44,9 @@ object LocationBordersManager : PreferencesHolder("location-borders") {
 
         val currentDayNumber = CryptoUtil.currentDayNumber()
 
-        newBorders[currentDayNumber]?.let {currentBorder->
+        newBorders[currentDayNumber]?.let { currentBorder ->
             currentBorder.update(location)
-        }?: kotlin.run {
+        } ?: kotlin.run {
             newBorders[currentDayNumber] = LocationBorder(location)
         }
 

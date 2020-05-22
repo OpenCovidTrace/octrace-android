@@ -7,7 +7,7 @@ import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import com.google.gson.stream.JsonWriter
-import org.opencovidtrace.octrace.data.LocationIndex
+import org.opencovidtrace.octrace.storage.LocationIndex
 import java.util.*
 
 object ObjectMapperProvider : IndependentProvider<Gson>() {

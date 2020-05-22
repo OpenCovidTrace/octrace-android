@@ -1,6 +1,5 @@
 package org.opencovidtrace.octrace.api
 
-import org.opencovidtrace.octrace.data.ContactRequest
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -12,3 +11,11 @@ interface ContactsApiEndpoint {
     fun sendContactRequest(@Body contactRequest: ContactRequest): Call<Void>
 
 }
+
+
+data class ContactRequest(
+    val token: String,
+    val platform: String,
+    val secret: String,
+    val tst: Long
+)

@@ -9,7 +9,7 @@ import android.util.Log
 import org.opencovidtrace.octrace.data.ADV_TAG
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.data.SCAN_TAG
-import org.opencovidtrace.octrace.ext.data.insertLogs
+import org.opencovidtrace.octrace.ext.data.insertBtLogs
 import org.opencovidtrace.octrace.storage.BtContactsManager
 import org.opencovidtrace.octrace.storage.BtEncounter
 import org.opencovidtrace.octrace.utils.CryptoUtil
@@ -93,7 +93,7 @@ class DeviceManager(private val context: Context) {
             scanCallback
         )
         scanActive = true
-        insertLogs(SCAN_TAG, "Start scan")
+        insertBtLogs(SCAN_TAG, "Start scan")
     }
 
     /**
@@ -106,7 +106,7 @@ class DeviceManager(private val context: Context) {
         }
         scanCallback?.let { bluetoothAdapter?.bluetoothLeScanner?.stopScan(it) }
         scanCallback = null
-        insertLogs(SCAN_TAG, "Stop scan")
+        insertBtLogs(SCAN_TAG, "Stop scan")
     }
 
     /**
@@ -154,7 +154,7 @@ class DeviceManager(private val context: Context) {
                     }
                     when (status) {
                         BluetoothGatt.GATT_FAILURE -> {
-                            insertLogs(SCAN_TAG, "Failed to connect to ${device.address}")
+                            insertBtLogs(SCAN_TAG, "Failed to connect to ${device.address}")
                             deviceConnectCallback(device, false)
                             closeConnection()
                         }
@@ -213,7 +213,7 @@ class DeviceManager(private val context: Context) {
         val data = characteristic.value
 
         if (data.size != CryptoUtil.KEY_LENGTH * 2) {
-            insertLogs(SCAN_TAG, "Received unexpected data length: ${data.size}")
+            insertBtLogs(SCAN_TAG, "Received unexpected data length: ${data.size}")
 
             return
         }
@@ -226,7 +226,7 @@ class DeviceManager(private val context: Context) {
         val day = CryptoUtil.currentDayNumber()
         BtContactsManager.addContact(rollingId, day, BtEncounter(scanResult.rssi, meta))
 
-        insertLogs(
+        insertBtLogs(
             SCAN_TAG,
             "Received RPI from ${scanResult.device.address} RSSI ${scanResult.rssi}"
         )
@@ -253,11 +253,11 @@ class DeviceManager(private val context: Context) {
             return true
 
         if (!bluetoothAdapter.isMultipleAdvertisementSupported) {
-            insertLogs(ADV_TAG, "Multiple advertisement is not supported")
+            insertBtLogs(ADV_TAG, "Multiple advertisement is not supported")
         }
 
         if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            insertLogs(ADV_TAG, "Bluetooth LE is not supported")
+            insertBtLogs(ADV_TAG, "Bluetooth LE is not supported")
 
             return false
         }
@@ -265,7 +265,7 @@ class DeviceManager(private val context: Context) {
         val bluetoothLeAdvertiser: BluetoothLeAdvertiser? =
             bluetoothManager.adapter.bluetoothLeAdvertiser
         if (bluetoothLeAdvertiser == null) {
-            insertLogs(ADV_TAG, "Bluetooth LE advertiser is unavailable")
+            insertBtLogs(ADV_TAG, "Bluetooth LE advertiser is unavailable")
 
             return false
         }
@@ -305,15 +305,15 @@ class DeviceManager(private val context: Context) {
      */
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            insertLogs(ADV_TAG, "Advertising has started")
+            insertBtLogs(ADV_TAG, "Advertising has started")
 
             if (!startBleServer()) {
-                insertLogs(ADV_TAG, "Unable to create GATT server")
+                insertBtLogs(ADV_TAG, "Unable to create GATT server")
             }
         }
 
         override fun onStartFailure(errorCode: Int) {
-            insertLogs(ADV_TAG, "Failed to start advertising: errorCode $errorCode")
+            insertBtLogs(ADV_TAG, "Failed to start advertising: errorCode $errorCode")
         }
     }
 
@@ -368,14 +368,14 @@ class DeviceManager(private val context: Context) {
                         CryptoUtil.getCurrentRpi()
                     )
 
-                    insertLogs(
+                    insertBtLogs(
                         ADV_TAG,
                         "Sent RPI to ${device.address}"
                     )
                 }
                 else -> {
                     // Invalid characteristic
-                    insertLogs(
+                    insertBtLogs(
                         ADV_TAG,
                         "Invalid Characteristic Read ${characteristic.uuid}"
                     )
@@ -398,7 +398,7 @@ class DeviceManager(private val context: Context) {
     }
 
     fun stopServer() {
-        insertLogs(ADV_TAG, "Stop gatt server")
+        insertBtLogs(ADV_TAG, "Stop gatt server")
 
         bluetoothGattServer?.close()
     }

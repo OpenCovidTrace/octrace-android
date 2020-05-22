@@ -222,9 +222,7 @@ class BleUpdatesService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) IMPORTANCE_LOW
             else Notification.PRIORITY_LOW
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            builder.setCategory(Notification.CATEGORY_SERVICE)
-        }
+        builder.setCategory(Notification.CATEGORY_SERVICE)
 
         return builder.build()
     }

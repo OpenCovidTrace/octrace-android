@@ -63,7 +63,7 @@
         android:textColor="@android:color/white"
         android:textSize="@dimen/text_normal"
         app:layout_constraintBottom_toBottomOf="@id/myLocationButton"
-        app:layout_constraintEnd_toStartOf="@id/logsButton"
+        app:layout_constraintEnd_toStartOf="@id/btLogsButton"
         app:layout_constraintStart_toEndOf="@id/myLocationButton" />
 
     <TextView
@@ -79,7 +79,7 @@
         app:layout_constraintTop_toBottomOf="@id/recordContactButton" />
 
     <ImageButton
-        android:id="@+id/logsButton"
+        android:id="@+id/btLogsButton"
         android:layout_width="@dimen/map_input_size"
         android:layout_height="@dimen/map_input_size"
         android:layout_marginEnd="@dimen/margin_regular"
@@ -90,5 +90,18 @@
         app:layout_constraintBottom_toBottomOf="@id/recordContactButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/recordContactButton" />
+
+    <Button
+        android:id="@+id/dp3tLogsButton"
+        android:layout_width="@dimen/map_input_size"
+        android:layout_height="@dimen/map_input_size"
+        android:layout_marginBottom="@dimen/margin_regular"
+        android:background="@drawable/bg_secondary_button"
+        android:contentDescription="@string/logs"
+        android:text="D"
+        android:textColor="@color/colorAccent"
+        android:tint="@color/colorAccent"
+        app:layout_constraintBottom_toTopOf="@id/btLogsButton"
+        app:layout_constraintEnd_toEndOf="@id/btLogsButton" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -9,7 +9,7 @@ android {
     buildToolsVersion "29.0.3"
     defaultConfig {
         applicationId "org.opencovidtrace.octrace.dev"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 29
         versionCode 1
         versionName "0.0.1"
@@ -57,6 +57,8 @@ dependencies {
     implementation 'com.squareup.okhttp3:logging-interceptor:3.14.2'
     implementation 'com.github.andrefrsousa:SuperBottomSheet:1.5.0'
     implementation 'com.google.firebase:firebase-messaging:20.1.7'
+
+    implementation 'org.dpppt:dp3t-sdk-android:0.2.6'
 
     implementation 'com.google.zxing:core:3.4.0'
     implementation 'org.greenrobot:eventbus:3.1.1'

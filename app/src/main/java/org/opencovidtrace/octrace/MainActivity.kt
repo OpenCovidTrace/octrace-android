@@ -3,16 +3,15 @@ package org.opencovidtrace.octrace
 import android.Manifest.permission
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
+import android.content.*
 import android.content.IntentSender.SendIntentException
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
@@ -25,13 +24,15 @@ import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import org.dpppt.android.sdk.DP3T
 import org.opencovidtrace.octrace.OnboardingActivity.Extra.STAGE_EXTRA
-import org.opencovidtrace.octrace.data.ContactRequest
+import org.opencovidtrace.octrace.api.ContactRequest
 import org.opencovidtrace.octrace.data.Enums
 import org.opencovidtrace.octrace.data.Enums.*
 import org.opencovidtrace.octrace.di.BluetoothManagerProvider
 import org.opencovidtrace.octrace.di.api.ContactsApiClientProvider
 import org.opencovidtrace.octrace.ext.access.withPermissions
+import org.opencovidtrace.octrace.ext.data.insertDp3tLogs
 import org.opencovidtrace.octrace.ext.ifAllNotNull
 import org.opencovidtrace.octrace.ext.ui.showError
 import org.opencovidtrace.octrace.ext.ui.showInfo
@@ -42,6 +43,7 @@ import org.opencovidtrace.octrace.storage.*
 import org.opencovidtrace.octrace.utils.CryptoUtil
 import org.opencovidtrace.octrace.utils.CryptoUtil.base64DecodeByteArray
 import org.opencovidtrace.octrace.utils.CryptoUtil.base64EncodedString
+import org.opencovidtrace.octrace.utils.DoAsync
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -54,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         const val REQUEST_LOCATION = 1
         const val REQUEST_CHECK_TRACKING_SETTINGS = 2
         private const val REQUEST_BLUETOOTH = 3
+        private const val REQUEST_BATTERY = 4
     }
 
     private var bleUpdatesService: BleUpdatesService? = null
@@ -63,6 +66,7 @@ class MainActivity : AppCompatActivity() {
     private val deviceManager by BluetoothManagerProvider()
     private var needStartBleService = false
     private var bluetoothAlert: AlertDialog.Builder? = null
+    private var batteryAlert: AlertDialog.Builder? = null
     private val contactsApiClient by ContactsApiClientProvider()
 
     // Monitors the state of the connection to the service.
@@ -82,6 +86,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    private val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            context?.let {
+                val status = DP3T.getStatus(it)
+
+                insertDp3tLogs("Tracing state changed: $status")
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -99,6 +113,8 @@ class MainActivity : AppCompatActivity() {
 
             return
         }
+
+        registerReceiver(broadcastReceiver, DP3T.getUpdateIntentFilter());
 
         handleDeepLink()
     }
@@ -131,6 +147,14 @@ class MainActivity : AppCompatActivity() {
             LocationBordersManager.removeOldLocationBorders()
             EncryptionKeysManager.removeOldKeys()
 
+            DoAsync {
+                try {
+                    DP3T.sync(this)
+                } catch (e: Exception) {
+                    insertDp3tLogs("Sync error: ${e.message}")
+                }
+            }
+
             if (UserSettingsManager.sick()) {
                 KeysManager.uploadNewKeys()
             }
@@ -157,6 +181,8 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         bleUpdatesService?.stopBleService(true)
         stopTrackingService()
+
+        unregisterReceiver(broadcastReceiver)
     }
 
     override fun onRequestPermissionsResult(
@@ -176,18 +202,31 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == REQUEST_BLUETOOTH)
+            if (requestCode == REQUEST_BLUETOOTH) {
                 startBleService()
+            } else if (requestCode == REQUEST_BATTERY) {
+                startDp3tService()
+            }
         }
     }
 
     private fun enableTracking() {
         if (LocationAccessManager.authorized(this)) {
             startOrUpdateTrackingService()
-            if (bleUpdatesService != null)
+            if (bleUpdatesService != null) {
                 startBleService()
-            else
+            } else {
                 needStartBleService = true
+            }
+
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            val batteryOptDeact = powerManager.isIgnoringBatteryOptimizations(packageName)
+
+            if (batteryOptDeact) {
+                showBatteryDisabledError()
+            } else {
+                startDp3tService()
+            }
         } else {
             ActivityCompat.requestPermissions(
                 this,
@@ -275,8 +314,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun startDp3tService() {
+        DP3T.start(this)
+        insertDp3tLogs("Started tracing")
+    }
+
     private fun showBluetoothDisabledError() {
-        if (bluetoothAlert == null)
+        if (bluetoothAlert == null) {
             bluetoothAlert = AlertDialog.Builder(this).apply {
                 setTitle(R.string.bluetooth_turn_off)
                 setMessage(R.string.bluetooth_turn_off_description)
@@ -289,6 +333,7 @@ class MainActivity : AppCompatActivity() {
                 setOnCancelListener { bluetoothAlert = null }
                 show()
             }
+        }
     }
 
     private fun showBluetoothNotFoundError() {
@@ -298,6 +343,26 @@ class MainActivity : AppCompatActivity() {
             setCancelable(false)
             setNegativeButton(R.string.done) { _, _ -> }
             show()
+        }
+    }
+
+    private fun showBatteryDisabledError() {
+        if (batteryAlert == null) {
+            batteryAlert = AlertDialog.Builder(this).apply {
+                setTitle(R.string.battery_turn_off)
+                setMessage(R.string.battery_turn_off_description)
+                setCancelable(false)
+                setPositiveButton(R.string.enable) { _, _ ->
+                    val enableIntent = Intent(
+                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:" + packageName)
+                    )
+                    startActivityForResult(enableIntent, REQUEST_BATTERY)
+                    batteryAlert = null
+                }
+                setOnCancelListener { batteryAlert = null }
+                show()
+            }
         }
     }
 

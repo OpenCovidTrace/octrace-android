@@ -1,16 +1,16 @@
 package org.opencovidtrace.octrace.ui.map.logs
 
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
+import org.opencovidtrace.octrace.data.LogTableValue
 import org.opencovidtrace.octrace.di.DatabaseProvider
-import org.opencovidtrace.octrace.utils.DoAsync
 
-class LogsViewModel : ViewModel() {
+abstract class LogsViewModel<T : LogTableValue> : ViewModel() {
 
-    private val database by DatabaseProvider()
+    protected val database by DatabaseProvider()
 
-    val logsLiveData = database.appDao().getLogsLiveData()
+    abstract val logsLiveData: LiveData<List<T>>
 
-    fun removeOldContacts() {
-        DoAsync { database.appDao().clearLogs() }
-    }
+    abstract fun removeOldContacts()
+
 }
