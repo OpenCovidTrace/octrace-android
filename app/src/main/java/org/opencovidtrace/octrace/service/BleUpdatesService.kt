@@ -30,8 +30,8 @@ import java.util.*
 class BleUpdatesService : Service() {
 
     companion object {
-        private const val SILENT_CHANNEL_ID = "silent_channel_ble"
-        private const val NOTIFICATION_ID = 7856234
+        private const val BACKGROUND_CHANNEL_ID = "SILENT_CHANNEL_BLE"
+        private const val NOTIFICATION_ID = 1
 
         private var isRunningInInForegroundService = false
     }
@@ -85,7 +85,7 @@ class BleUpdatesService : Service() {
             // Android O requires a Notification Channel.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val name: CharSequence = getString(R.string.app_name)
-                val channel = NotificationChannel(SILENT_CHANNEL_ID, name, IMPORTANCE_LOW)
+                val channel = NotificationChannel(BACKGROUND_CHANNEL_ID, name, IMPORTANCE_LOW)
                 createNotificationChannel(channel)
             }
         }
@@ -210,7 +210,7 @@ class BleUpdatesService : Service() {
             intent, PendingIntent.FLAG_UPDATE_CURRENT
         )
         val builder: NotificationCompat.Builder =
-            NotificationCompat.Builder(this, SILENT_CHANNEL_ID)
+            NotificationCompat.Builder(this, BACKGROUND_CHANNEL_ID)
                 .setContentText(text)
                 .setContentTitle(getBluetoothState())
                 .setOngoing(true)
