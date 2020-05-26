@@ -20,7 +20,7 @@ data class BtLogTableValue(
     val time: Date = Date(),
     @PrimaryKey(autoGenerate = true) var id: Int? = null
 ) : LogTableValue {
-    override fun getLog() = "${time.dateFullFormat()} <$tag> $text"
+    override fun getLog() = "[${time.dateFullFormat()}] <$tag> $text"
 }
 
 @Entity(tableName = "dp3t_log_table")
@@ -29,7 +29,7 @@ data class Dp3tLogTableValue(
     val time: Date = Date(),
     @PrimaryKey(autoGenerate = true) var id: Int? = null
 ) : LogTableValue {
-    override fun getLog() = "${time.dateFullFormat()} $text"
+    override fun getLog() = "[${time.dateFullFormat()}] $text"
 }
 
 
