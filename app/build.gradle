@@ -58,6 +58,8 @@ dependencies {
     implementation 'com.github.andrefrsousa:SuperBottomSheet:1.5.0'
     implementation 'com.google.firebase:firebase-messaging:20.1.7'
 
+    implementation "org.bouncycastle:bcprov-jdk15on:1.65"
+
     implementation 'org.dpppt:dp3t-sdk-android:0.2.6'
 
     implementation 'com.google.zxing:core:3.4.0'

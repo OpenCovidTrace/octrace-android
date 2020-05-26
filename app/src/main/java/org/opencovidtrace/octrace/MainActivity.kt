@@ -25,6 +25,7 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import org.dpppt.android.sdk.DP3T
+import org.dpppt.android.sdk.TracingStatus
 import org.opencovidtrace.octrace.OnboardingActivity.Extra.STAGE_EXTRA
 import org.opencovidtrace.octrace.api.ContactRequest
 import org.opencovidtrace.octrace.data.Enums
@@ -34,6 +35,7 @@ import org.opencovidtrace.octrace.di.api.ContactsApiClientProvider
 import org.opencovidtrace.octrace.ext.access.withPermissions
 import org.opencovidtrace.octrace.ext.data.insertDp3tLogs
 import org.opencovidtrace.octrace.ext.ifAllNotNull
+import org.opencovidtrace.octrace.ext.text.dateFullFormat
 import org.opencovidtrace.octrace.ext.ui.showError
 import org.opencovidtrace.octrace.ext.ui.showInfo
 import org.opencovidtrace.octrace.location.LocationAccessManager
@@ -47,6 +49,7 @@ import org.opencovidtrace.octrace.utils.DoAsync
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.*
 import kotlin.math.abs
 
 class MainActivity : AppCompatActivity() {
@@ -91,7 +94,7 @@ class MainActivity : AppCompatActivity() {
             context?.let {
                 val status = DP3T.getStatus(it)
 
-                insertDp3tLogs("Tracing state changed: $status")
+                insertDp3tLogs("Tracing state changed: ${status.description()}")
             }
         }
     }
@@ -398,4 +401,16 @@ class MainActivity : AppCompatActivity() {
             })
     }
 
+}
+
+
+fun TracingStatus.description(): String {
+    return """
+        numberOfContacts: $numberOfContacts,
+        advertising: $isAdvertising,
+        receiving: $isReceiving,
+        lastSyncDate: ${Date(lastSyncDate).dateFullFormat()},
+        infectionStatus: $infectionStatus,
+        errors: $errors
+    """.trimIndent()
 }
