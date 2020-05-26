@@ -8,6 +8,7 @@
     <string name="bluetooth_do_not_support_description">Therefore, we will not be able to connect the device</string>
     <string name="battery_turn_off">Battery optimization is on</string>
     <string name="battery_turn_off_description">Please turn off battery optimization to enable Dp3t library!</string>
+    <string name="turn_off">Turn off</string>
 
     <!--Other-->
     <string name="enable">Enable</string>

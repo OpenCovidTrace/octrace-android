@@ -222,12 +222,10 @@ class MainActivity : AppCompatActivity() {
             }
 
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            val batteryOptDeact = powerManager.isIgnoringBatteryOptimizations(packageName)
-
-            if (batteryOptDeact) {
-                showBatteryDisabledError()
-            } else {
+            if (powerManager.isIgnoringBatteryOptimizations(packageName)) {
                 startDp3tService()
+            } else {
+                showBatteryDisabledError()
             }
         } else {
             ActivityCompat.requestPermissions(
@@ -328,7 +326,6 @@ class MainActivity : AppCompatActivity() {
             bluetoothAlert = AlertDialog.Builder(this).apply {
                 setTitle(R.string.bluetooth_turn_off)
                 setMessage(R.string.bluetooth_turn_off_description)
-                setCancelable(false)
                 setPositiveButton(R.string.enable) { _, _ ->
                     val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                     startActivityForResult(enableBtIntent, REQUEST_BLUETOOTH)
@@ -355,8 +352,7 @@ class MainActivity : AppCompatActivity() {
             batteryAlert = AlertDialog.Builder(this).apply {
                 setTitle(R.string.battery_turn_off)
                 setMessage(R.string.battery_turn_off_description)
-                setCancelable(false)
-                setPositiveButton(R.string.enable) { _, _ ->
+                setPositiveButton(R.string.turn_off) { _, _ ->
                     val enableIntent = Intent(
                         Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                         Uri.parse("package:" + packageName)
