@@ -6,7 +6,7 @@ DP3T switched to Exposure Notification Framework of Apple/Google which requires 
 
 Hence **this project development is on hold for now**, and we switched to other project which is focused solely on **our technology**:
 
-https://github.com/OpenCovidTrace/oextrace-ios
+https://github.com/OpenCovidTrace/oextrace-android
 
 ## Fully Private Open Source Contact Tracing
 The promise of privacy is not enough. That’s why verification of privacy being preserved through open source is a must.
