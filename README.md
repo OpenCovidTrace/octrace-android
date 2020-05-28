@@ -1,7 +1,12 @@
 # OpenCovidTrace Android App
 
-## Work in progress!
-Android version is not yet fully implemented...
+## WARNING: Issue with DP3T SDK
+
+DP3T switched to Exposure Notification Framework of Apple/Google which requires entitlements which are only available for official government/health organisations.
+
+Hence **this project development is on hold for now**, and we switched to other project which is focused solely on **our technology**:
+
+https://github.com/OpenCovidTrace/oextrace-ios
 
 ## Fully Private Open Source Contact Tracing
 The promise of privacy is not enough. That’s why verification of privacy being preserved through open source is a must.
